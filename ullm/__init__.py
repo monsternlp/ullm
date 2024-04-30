@@ -7,13 +7,15 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
-
+from .openai import OpenAICompatibleModel, OpenAIModel
 
 __all__ = [
     AssistantMessage,
     GenerateConfig,
     LanguageModel,
     LocalLanguageModel,
+    OpenAICompatibleModel,
+    OpenAIModel,
     RemoteLanguageModel,
     ToolMessage,
     UserMessage,

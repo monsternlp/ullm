@@ -1,11 +1,11 @@
 lint: clean
 	- pip install ruff codespell -q
-	- ruff check --fix ullm/
+	- ruff check --fix ullm/ tests/
 	- codespell
 
 format: lint
 	- pip install ruff -q
-	- ruff format ullm/
+	- ruff format ullm/ tests/
 
 clean:
 	- find . -iname "*__pycache__" | xargs rm -rf
