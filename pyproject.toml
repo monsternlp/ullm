@@ -1,0 +1,82 @@
+[project]
+name = "ullm"
+version = "0.0.1"
+description = "A unified interface for local Large Language Model(LLM) models and online LLM providers."
+authors = [
+    {name = "Linusp", email = "linusp1024@gmail.com"},
+]
+dependencies = [
+    "pydantic",
+    "arrow",
+    "websocket-client",
+    "requests",
+    "python-magic",
+]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/monsternlp/ullm"
+
+[project.optional-dependencies]
+test = [
+  'pytest',
+  'pytest-cov',
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+source = ["ullm"]
+omit = ["tests/*"]
+
+[tool.codespell]
+skip = "*.lock,./.tox,./.venv,./.git,./venv"
+quiet-level = 3
+ignore-words-list = "ullm"
+count = ""
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F"]
+extend-select = ["I"]
+ignore = ["E201", "E202"]
