@@ -9,6 +9,7 @@ from .base import (
 )
 from .google import GoogleModel
 from .iflytek import IflyTekModel
+from .minimax import MiniMaxModel
 from .openai import OpenAICompatibleModel, OpenAIModel
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     IflyTekModel,
     LanguageModel,
     LocalLanguageModel,
+    MiniMaxModel,
     OpenAICompatibleModel,
     OpenAIModel,
     RemoteLanguageModel,
