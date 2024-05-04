@@ -13,6 +13,7 @@ from .minimax import MiniMaxModel
 from .moonshot import MoonshotModel
 from .openai import OpenAICompatibleModel, OpenAIModel
 from .stepfun import StepFunModel
+from .zero_one import ZeroOneAIModel
 
 __all__ = [
     AssistantMessage,
@@ -30,4 +31,5 @@ __all__ = [
     StepFunModel,
     ToolMessage,
     UserMessage,
+    ZeroOneAIModel,
 ]
