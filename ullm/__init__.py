@@ -10,6 +10,7 @@ from .base import (
 from .google import GoogleModel
 from .iflytek import IflyTekModel
 from .minimax import MiniMaxModel
+from .moonshot import MoonshotModel
 from .openai import OpenAICompatibleModel, OpenAIModel
 
 __all__ = [
@@ -21,6 +22,7 @@ __all__ = [
     LanguageModel,
     LocalLanguageModel,
     MiniMaxModel,
+    MoonshotModel,
     OpenAICompatibleModel,
     OpenAIModel,
     RemoteLanguageModel,
