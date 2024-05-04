@@ -8,6 +8,7 @@ from .base import (
     UserMessage,
 )
 from .google import GoogleModel
+from .groq import GroqModel
 from .iflytek import IflyTekModel
 from .minimax import MiniMaxModel
 from .moonshot import MoonshotModel
@@ -20,6 +21,7 @@ __all__ = [
     GenerateConfig,
     GoogleModel,
     GoogleModel,
+    GroqModel,
     IflyTekModel,
     LanguageModel,
     LocalLanguageModel,
