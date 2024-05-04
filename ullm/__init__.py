@@ -15,6 +15,7 @@ from .moonshot import MoonshotModel
 from .openai import AzureOpenAIModel, OpenAICompatibleModel, OpenAIModel
 from .stepfun import StepFunModel
 from .zero_one import ZeroOneAIModel
+from .zhipu import ZhipuAIModel
 
 __all__ = [
     AssistantMessage,
@@ -35,4 +36,5 @@ __all__ = [
     ToolMessage,
     UserMessage,
     ZeroOneAIModel,
+    ZhipuAIModel,
 ]
