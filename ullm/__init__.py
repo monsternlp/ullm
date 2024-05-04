@@ -12,6 +12,7 @@ from .iflytek import IflyTekModel
 from .minimax import MiniMaxModel
 from .moonshot import MoonshotModel
 from .openai import OpenAICompatibleModel, OpenAIModel
+from .stepfun import StepFunModel
 
 __all__ = [
     AssistantMessage,
@@ -26,6 +27,7 @@ __all__ = [
     OpenAICompatibleModel,
     OpenAIModel,
     RemoteLanguageModel,
+    StepFunModel,
     ToolMessage,
     UserMessage,
 ]
