@@ -1,3 +1,4 @@
+from .alibaba import AlibabaModel
 from .base import (
     AssistantMessage,
     GenerateConfig,
@@ -21,6 +22,7 @@ from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
 
 __all__ = [
+    AlibabaModel,
     AssistantMessage,
     AzureOpenAIModel,
     CohereModel,
