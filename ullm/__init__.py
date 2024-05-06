@@ -7,6 +7,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .cohere import CohereModel
 from .google import GoogleModel
 from .groq import GroqModel
 from .iflytek import IflyTekModel
@@ -21,6 +22,7 @@ from .zhipu import ZhipuAIModel
 __all__ = [
     AssistantMessage,
     AzureOpenAIModel,
+    CohereModel,
     GenerateConfig,
     GoogleModel,
     GoogleModel,
