@@ -12,6 +12,7 @@ from .base import (
     UserMessage,
 )
 from .cohere import CohereModel
+from .deepseek import DeepSeekModel
 from .google import GoogleModel
 from .groq import GroqModel
 from .iflytek import IflyTekModel
@@ -32,6 +33,7 @@ __all__ = [
     BaichuanModel,
     BaiduModel,
     CohereModel,
+    DeepSeekModel,
     GenerateConfig,
     GoogleModel,
     GoogleModel,
