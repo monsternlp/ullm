@@ -1,5 +1,6 @@
 from .alibaba import AlibabaModel
 from .baichuan import BaichuanModel
+from .baidu import BaiduModel
 from .base import (
     AssistantMessage,
     GenerateConfig,
@@ -27,6 +28,7 @@ __all__ = [
     AssistantMessage,
     AzureOpenAIModel,
     BaichuanModel,
+    BaiduModel,
     CohereModel,
     GenerateConfig,
     GoogleModel,
