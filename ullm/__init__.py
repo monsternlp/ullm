@@ -1,4 +1,5 @@
 from .alibaba import AlibabaModel
+from .anthropic import AnthropicModel
 from .baichuan import BaichuanModel
 from .baidu import BaiduModel
 from .base import (
@@ -25,6 +26,7 @@ from .zhipu import ZhipuAIModel
 
 __all__ = [
     AlibabaModel,
+    AnthropicModel,
     AssistantMessage,
     AzureOpenAIModel,
     BaichuanModel,
