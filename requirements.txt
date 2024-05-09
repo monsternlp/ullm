@@ -17,6 +17,8 @@ charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via ullm (pyproject.toml)
+deepmerge==1.1.1
+    # via ullm (pyproject.toml)
 idna==3.7
     # via requests
 pydantic==2.7.1

@@ -12,6 +12,7 @@ dependencies = [
     "requests",
     "python-magic",
     "click",
+    "deepmerge",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
