@@ -11,6 +11,7 @@ dependencies = [
     "websocket-client",
     "requests",
     "python-magic",
+    "click",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -33,6 +34,9 @@ test = [
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+ullm = "ullm.cli:main"
 
 [tool.coverage.run]
 source = ["ullm"]
