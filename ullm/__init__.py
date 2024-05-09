@@ -18,6 +18,7 @@ from .groq import GroqModel
 from .iflytek import IflyTekModel
 from .minimax import MiniMaxModel
 from .moonshot import MoonshotModel
+from .ollama import OllamaModel
 from .openai import AzureOpenAIModel, OpenAICompatibleModel, OpenAIModel
 from .openrouter import OpenRouterModel
 from .perplexity import PerplexityModel
@@ -43,6 +44,7 @@ __all__ = [
     LocalLanguageModel,
     MiniMaxModel,
     MoonshotModel,
+    OllamaModel,
     OpenAICompatibleModel,
     OpenAIModel,
     OpenRouterModel,
