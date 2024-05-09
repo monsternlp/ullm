@@ -1,19 +1,402 @@
-ullm
-======
+<h1 align="center">ullm</h1>
+<p align="center">A unified interface for local Large Language Model(LLM) models and online LLM providers.</p>
+<h4 align="center">
+    <a href="https://pypi.org/project/ullm/" target="_blank">
+        <img src="https://shields.io/pypi/v/ullm.svg" alt="PyPI Version">
+    </a>
+    <a href="https://github.com/monsternlp/ullm/actions/workflows/pre-commit.yaml" target="_blank">
+        <img src="https://shields.io/github/actions/workflow/status/monsternlp/ullm/pre-commit.yaml?label=pre-commit" alt="Pre-commit status">
+    </a>
+    <a href="https://github.com/monsternlp/ullm/actions/workflows/publish.yaml" target="_blank">
+        <img src="https://shields.io/github/actions/workflow/status/monsternlp/ullm/publish.yaml" alt="Build status">
+    </a>
+</h4>
 
-A unified interface for local Large Language Model(LLM) models and online providers.
+ullm 希望能为本地模型以及众多在线 LLM 服务提供统一的调用方式，使得开发者能够无痛地在不同模型或 LLM 服务之间切换，而无需更改代码。
+
+> [!NOTE]
+> 本项目只专注于为不同 LLM 模型或服务的基础生成功能提供统一接口，包括通用的生成、聊天接口以及最基础的工具调用、视觉理解功能，在此之外的其他相关功能如 Finetuning、Prompt Engineering、Emebedding、RAG、Agent、TTS、ASR 本项目目前并不支持，将来也不会支持。
+
+> [!WARNING]
+> 本项目会尽可能地遵循语义版本，但在 1.0 版本前可能会发生不兼容的接口变动。
+
+## 目录
+
+<!-- TOC -->
+
+- [功能与特性](#功能与特性)
+- [支持模型](#支持模型)
+  - [本地模型](#本地模型)
+  - [在线服务](#在线服务)
+- [安装](#安装)
+- [使用](#使用)
+  - [创建模型配置](#创建模型配置)
+  - [实例化模型](#实例化模型)
+  - [设置生成参数](#设置生成参数)
+  - [生成文本](#生成文本)
+  - [聊天](#聊天)
+- [命令行](#命令行)
+  - [list-providers](#list-providers)
+  - [list-models](#list-models)
+  - [print-example](#print-example)
+  - [chat](#chat)
+
+<!-- /TOC -->
+
+## 功能与特性
+
+- 支持 OpenAI 等 18 个在线 LLM 服务，详见「[在线服务](#在线服务)」一节
+- 支持和 OpenAI 接口兼容的自建服务
+- 支持 Ollama API
+- 配置化的使用方式，为所有不同模型及服务提供统一的初始化方式，详见「[使用](#使用)」一节
+- [ ] 本地模型支持
+- [ ] 为所有模型支持工具调用（对原本不支持的通过自定义 prompt 模板实现）
+- [ ] 模型配置的管理
+- [ ] 多模型路由
+- [ ] 单元测试
+- [ ] 完善文档
+- [ ] 实现流式接口
+
+## 支持模型
+
+### 本地模型
+
+TBD
+
+### 在线服务
+
+| 平台 | Provider ID            | 模型数量 | 视觉模型数量 | 支持工具调用的模型数量 | 联网模型数量 |
+|------|-------------------|----------|--------------|------------------------|--------------|
+| [零一万物](https://platform.lingyiwanwu.com/docs)     | 01ai              |        3 |            1 |                      0 |            0 |
+| [阿里巴巴](https://help.aliyun.com/zh/dashscope/developer-reference/model-square/?spm=a2c4g.11186623.0.0.1cca23edHYSGqT)      | alibaba           |       44 |            4 |                      6 |            6 |
+| [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)     | anthropic         |        3 |            3 |                      3 |            0 |
+| [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)     | azure-openai      |       20 |            4 |                     11 |            0 |
+| [百川智能](https://platform.baichuan-ai.com/docs/api)     | baichuan          |        4 |            0 |                      0 |            2 |
+| [百度](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu)     | baidu             |       46 |            0 |                     24 |           12 |
+| [Cohere](https://docs.cohere.com/reference/about)     | cohere            |       12 |            0 |                      4 |            6 |
+| [DeepSeek](https://platform.deepseek.com/docs)     | deepseek          |        2 |            0 |                      0 |            0 |
+| [Google](https://ai.google.dev/gemini-api/docs)     | google            |        3 |            2 |                      2 |            0 |
+| [Groq](https://console.groq.com/docs/quickstart)     | groq              |        4 |            0 |                      4 |            0 |
+| [科大讯飞](https://www.xfyun.cn/doc/spark/%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E.html)     | iflytek           |        4 |            0 |                      2 |            0 |
+| [MiniMax](https://www.minimaxi.com/document/algorithm-concept?id=6433f37594878d408fc8295d)     | minimax           |        5 |            0 |                      5 |            0 |
+| [Moonshot](https://platform.moonshot.cn/docs/api/chat#%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF)     | moonshot          |        3 |            0 |                      3 |            0 |
+| [OpenAI](https://platform.openai.com/docs/api-reference/chat)      | openai            |       20 |            4 |                     11 |            0 |
+| [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      127 |           13 |                    127 |            4 |
+| [Perplexity](https://docs.perplexity.ai/docs/getting-started)     | perplexity        |        7 |            0 |                      0 |            2 |
+| [阶跃星辰](https://platform.stepfun.com/docs/Chat/chat-completion-create)     | stepfun           |        3 |            1 |                      0 |            0 |
+| [智谱](https://open.bigmodel.cn/dev/api)     | zhipu             |        5 |            1 |                      4 |            2 |
+| OpenAI 接口兼容的服务     | openai-compatible |          |              |                        |              |
+| Ollama API     | ollama            |          |              |                        |              |
 
 
-## Installation
+## 安装
 
 ```shell
 pip install ullm
 ```
 
-## Features
+## 使用
 
-TBD
+### 创建模型配置
 
-## Usage
+示例:
 
-TBD
+```python
+model_config = {
+    # required fields
+    "type": 'remote',
+    "model": 'gpt-3.5-turbo',
+    "provider": 'openai',
+    "api_key": 'sk-************************************************',
+
+    # optional fields
+    "max_tokens": 4096,
+    "max_input_tokens": 1024,
+    "max_output_tokens": 1024,
+    "temperature": 0.8,
+    "top_p": 1.0,
+    "top_k": 50,
+    "stop_sequences": ['stop1', 'stop2'],
+    "http_proxy": 'https://example-proxy.com',
+}
+
+```
+
+模型配置中必须指定这三个字段
+
+- type: 指定模型为本地模型(`local`)还是在线模型(`remote`)，目前仅实现了 remote
+- provider: 指定模型提供方，见前面「[支持模型](#支持模型)」一节，或者你也可以通过命令行工具来或获取目前支持的在线服务提供方
+
+  ```shell
+  ullm list-providers
+  ```
+
+  会得到如下结果，使用其中的 name 作为配置文件中 `provider` 的值
+
+  ```
+  | name              |   models |   visual_models |   tool_models |   online_models |
+  |-------------------|----------|-----------------|---------------|-----------------|
+  | 01ai              |        3 |               1 |             0 |               0 |
+  | alibaba           |       44 |               4 |             6 |               6 |
+  | anthropic         |        3 |               3 |             3 |               0 |
+  | azure-openai      |       20 |               4 |            11 |               0 |
+  | baichuan          |        4 |               0 |             0 |               2 |
+  | baidu             |       46 |               0 |            24 |              12 |
+  | cohere            |       12 |               0 |             4 |               6 |
+  | deepseek          |        2 |               0 |             0 |               0 |
+  | google            |        3 |               2 |             2 |               0 |
+  | groq              |        4 |               0 |             4 |               0 |
+  | iflytek           |        4 |               0 |             2 |               0 |
+  | minimax           |        5 |               0 |             5 |               0 |
+  | moonshot          |        3 |               0 |             3 |               0 |
+  | ollama            |          |                 |               |                 |
+  | openai            |       20 |               4 |            11 |               0 |
+  | openai-compatible |          |                 |               |                 |
+  | openrouter        |      127 |              13 |           127 |               4 |
+  | perplexity        |        7 |               0 |             0 |               2 |
+  | stepfun           |        3 |               1 |             0 |               0 |
+  | zhipu             |        5 |               1 |             4 |               2 |
+  ```
+
+- `model`: 指定要使用的模型名字
+
+除这三个字段外，各不同平台的模型可能会有各自的一些必需字段（如 `api_key`），这些必需字段都在每个模型类的 META 中定义，如 `OpenAIModel`
+
+```python
+class OpenAIModel(OpenAICompatibleModel):
+    META = RemoteLanguageModelMetaInfo(
+        api_url="https://api.openai.com/v1/chat/completions",
+        language_models=[
+            # ......
+        ],
+        visual_language_models=[
+            # ......
+        ],
+        # https://platform.openai.com/docs/guides/function-calling
+        tool_models=[
+            # ......
+        ],
+        required_config_fields=["api_key"],
+    )
+```
+
+由于支持的平台众多，为方便起见，ullm 在命令行接口中提供了工具来生成示例代码供您修改
+
+```shell
+ullm print-example --provider openai
+```
+
+会得到如下输出
+
+```
+from ullm import LanguageModel
+
+config = {
+    # required fields
+    "type": 'remote',
+    "model": 'gpt-3.5-turbo',
+    "provider": 'openai',
+    "api_key": 'sk-************************************************',
+
+    # optional fields
+    "max_tokens": 4096,
+    "max_input_tokens": 1024,
+    "max_output_tokens": 1024,
+    "temperature": 0.8,
+    "top_p": 1.0,
+    "Top_k": 50,
+    "stop_sequences": ['stop1', 'stop2'],
+    "http_proxy": 'https://example-proxy.com',
+}
+model = LanguageModel.from_config(config)
+messages = [{"role": "user", "content": "Hello!"}]
+res = model.chat(messages)
+messages.append(res.to_message())
+messages.append({"role": "user", "content": "Tell me a joke please!"})
+res = model.chat(messages)
+```
+
+生成的示例代码中 `required_fields` 下方的配置项就是必须配置的。
+
+### 实例化模型
+
+所有模型的实例化统一通过 `LanguageModel` 这个类来进行，您不必关心不同模型的具体类名。
+
+```python
+from ullm import LanguageModel
+
+model = LanguageModel.from_config(model_config)
+```
+
+如果配置不符合要求，这个过程中可能会报错，具体来说
+
+- 如果配置中缺失了一些必需字段，会报错
+- 如果模型名称不在支持的模型列表里，会报错
+
+### 设置生成参数
+
+示例：
+
+```python
+generate_config = {
+    "temperature": 0.7,
+    "max_tokens": None,
+    "max_input_tokens": None,
+    "max_output_tokens": 1024,
+    "top_p": None,
+    "top_k": None,
+    "stop_sequences": ["stop1", "stop2"],
+    "frequency_penalty": None,
+    "presence_penalty": None,
+    "repetition_penalty": None,
+    "tools": None,
+    "tool_choice": None,
+}
+```
+
+
+ullm 支持在生成时指定部分生成参数以覆盖模型初始化时指定的一些生成参数，目前的生成参数支持这些
+
+- `temperature`: 指定模型使用温度采样生成方法，并控制生成随机程度
+- `max_tokens`: 指定模型单次计算时支持的最大窗口（输入与输出之和）长度，目前并不生效
+- `max_input_tokens`: 指定模型支持的最大输入长度，目前仅 `cohere` 和 `ollama` 支持
+- `max_output_tokens`: 指定模型生成结果的最大长度
+- `top_p`: 指定模型采样方法为 Nucleus 采样，并指定采样百分位，与 `temperature` 冲突
+- `top_k`: 指定模型生成时采样概率最高的 k 个 token，对部分 LLM 服务如 `OpenAI` 不生效
+- `stop_sequences`: 指定模型生成的停止标识
+- `frequency_penalty`/`presence_penalty`/`repetition_penalty`: 用于对模型生成中一些重复行为的惩罚的设置，各家实现并不一致，若需使用请查阅对应 LLM 服务文档
+- `tools`/`tool_choice`: 指定模型要调用的工具，目前工具方面的支持还不完善，暂不建议使用
+
+生成参数共有三层，从上到下分别是：运行时生成参数、模型配置指定的参数、LLM 服务自身的默认参数。一个参数若运行时不指定，那么会尝试从模型配置中获取，如果模型配置中也未设置则将使用服务自身的默认值（由外部 LLM API 自身决定）。
+
+### 生成文本
+
+示例：
+
+```python
+model.generate(""补全句子：白日依山尽", config=generate_config)
+```
+
+会得到如下结果
+
+```python
+GenerationResult(
+    model='qwen-turbo',
+    stop_reason='stop',
+    content='黄河入海流。',
+    tool_calls=None,
+    input_tokens=29,
+    output_tokens=5,
+    total_tokens=34,
+    original_result='{"output":{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"黄河入海流。"}}]},"usage":{"total_tokens":34,"output_tokens":5,"input_tokens":29},"request_id":"00ccdb48-74a3-9873-851c-79dbfb4b5a8c"}'
+)
+```
+
+### 聊天
+
+示例：
+
+```python
+system = "你是孙悟空，我是叫作小钻风的小妖怪，现在请你按照以上设定和我进行对话。"
+messages = [{"role": "user", "content": "大王叫我来巡山啊，巡完南山巡北山啊"}]
+model.chat(messages, system=system, config=generate_config)
+```
+
+会得到如下结果
+
+```python
+GenerationResult(
+    model='qwen-turbo',
+    stop_reason='stop',
+    content='嘿，小钻风，你这巡山的勤快劲儿倒也不赖。不过咱们这花果山水帘洞，可不比寻常山头，有啥新鲜事儿没？别告诉我你只找找有没有偷吃桃子的家伙。',
+    tool_calls=None,
+    input_tokens=50,
+    output_tokens=55,
+    total_tokens=105,
+    original_result='{"output":{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"嘿，小钻风，你这巡山的勤快劲儿倒也不赖。不过咱们这花果山水帘洞，可不比寻常山头，有啥新鲜事儿没？别告诉我你只找找有没有偷吃桃子的家伙。"}}]},"usage":{"total_tokens":105,"output_tokens":55,"input_tokens":50},"request_id":"774dcfa1-27be-955a-872a-94d8c0eeca2c"}'
+)
+```
+
+如果想继续对话下去，可以将结果转换为 message 对象加入到 `messages` 里去
+
+```python
+response = model.chat(messages, system=system, config=generate_config)
+messages.append(response.to_message())
+
+messages.append({"role": "user", "content": "啊！孙悟空打上门啦！"})
+model.chat(messages, system=system, config=generate_config)
+```
+
+会得到如下结果
+
+```python
+GenerationResult(
+    model='qwen-turbo',
+    stop_reason='stop',
+    content='哈哈，你这消息还挺灵通的嘛，小钻风。孙悟空那猴子，本事大得很，来找茬儿肯定是为了些过节。你准备好迎战了吗？咱们花果山的兄弟们可不能示弱，得让他见识见识我们妖族的厉害！',
+    tool_calls=None,
+    input_tokens=122,
+    output_tokens=60,
+    total_tokens=182,
+    original_result='{"output":{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"哈哈，你这消息还挺灵通的嘛，小钻风。孙悟空那猴子，本事大得很，来找茬儿肯定是为了些过节。你准备好迎战了吗？咱们花果山的兄弟们可不能示弱，得让他见识见识我们妖族的厉害！"}}]},"usage":{"total_tokens":182,"output_tokens":60,"input_tokens":122},"request_id":"3de256d0-23bd-93a5-93a6-7bb6e859f9d9"}'
+)
+```
+
+## 命令行
+
+### `list-providers`
+
+```shell
+Usage: ullm list-providers [OPTIONS]
+
+  List all remote LLM providers
+
+Options:
+  -h, --help  Show this message and exit.
+```
+
+### `list-models`
+
+
+```
+Usage: ullm list-models [OPTIONS]
+
+  List all remote models
+
+Options:
+  --providers TEXT  List models of these providers, separate multi providers
+                    with commas
+  --only-visual
+  --only-online
+  --only-tool
+  -h, --help        Show this message and exit.
+```
+
+### `print-example`
+
+
+```shell
+Usage: ullm print-example [OPTIONS]
+
+  Print code example for a specified remote LLM provider
+
+Options:
+  --provider TEXT  [required]
+  -h, --help       Show this message and exit.
+```
+
+### `chat`
+
+```shell
+Usage: ullm chat [OPTIONS]
+
+  A simple chat demo
+
+Options:
+  -c, --config-file TEXT       [required]
+  --system TEXT
+  --temperature FLOAT
+  --max-output-tokens INTEGER
+  --keep-turns-num INTEGER
+  -h, --help                   Show this message and exit.
+```
