@@ -348,3 +348,76 @@ class OpenAIModel(OpenAICompatibleModel):
         ],
         required_config_fields=["api_key"],
     )
+
+
+class AzureOpenAIRequestBody(OpenAIRequestBody):
+    model: Optional[str] = Field(None, exclude=True)
+
+
+@RemoteLanguageModel.register("azure-openai")
+class AzureOpenAIModel(OpenAICompatibleModel):
+    # https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions
+    # noqa: https://github.com/Azure/azure-rest-api-specs/blob/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/preview/2024-04-01-preview/inference.json
+    _API_TEMPLATE = "{endpoint}/openai/deployments/{deployment_name}/chat/completions"
+
+    # NOTE: azure openai 的 deployment_name 可以和 model name 不一样，
+    #       见 https://github.com/PrefectHQ/marvin/issues/842
+    # https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
+    META = RemoteLanguageModelMetaInfo(
+        language_models=[
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-0125",
+            "gpt-3.5-turbo-0613",  # Will be deprecated on June 13, 2024.
+            "gpt-3.5-turbo-1106",
+            "gpt-3.5-turbo-16k",  # Currently points to gpt-3.5-turbo-16k-0613.
+            "gpt-3.5-turbo-16k-0613",  # Will be deprecated on June 13, 2024.
+            "gpt-3.5-turbo-instruct",
+            "gpt-4",
+            "gpt-4-0125-preview",
+            "gpt-4-0613",
+            "gpt-4-1106-preview",
+            "gpt-4-32k",
+            "gpt-4-32k-0613",
+            "gpt-4-turbo",
+            "gpt-4-turbo-2024-04-09",
+            "gpt-4-turbo-preview",
+        ],
+        visual_language_models=[
+            "gpt-4-vision-preview",
+            "gpt-4-1106-vision-preview",
+            "gpt-4-turbo",
+            "gpt-4-turbo-2024-04-09",
+        ],
+        # https://platform.openai.com/docs/guides/function-calling
+        tool_models=[
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-0125",
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-1106",
+            "gpt-4",
+            "gpt-4-0125-preview",
+            "gpt-4-0613",
+            "gpt-4-1106-preview",
+            "gpt-4-turbo",
+            "gpt-4-turbo-2024-04-09",
+            "gpt-4-turbo-preview",
+        ],
+        required_config_fields=[
+            "api_key",
+            "azure_endpoint",
+            "azure_deployment_name",
+        ],
+    )
+    REQUEST_BODY_CLS = AzureOpenAIRequestBody
+
+    def _make_api_headers(self):
+        return {"api-key": self.config.api_key.get_secret_value()}
+
+    def _make_api_params(self):
+        return {"api-version": self.config.azure_api_version}
+
+    def _get_api_url(self):
+        return self._API_TEMPLATE.format(
+            endpoint=self.config.azure_endpoint,
+            deployment_name=self.config.azure_deployment_name,
+        )

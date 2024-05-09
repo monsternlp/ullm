@@ -261,6 +261,15 @@ class RemoteLanguageModelConfig(ModelConfig):
         description="讯飞星火 api_secret, 文心一言 secret key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
     )
+    azure_endpoint: Optional[str] = Field(
+        "", description="用于 Azure OpenAI", examples=["https://example-endpoint.openai.azure.com/"]
+    )
+    azure_deployment_name: Optional[str] = Field(
+        "", description="用于 Azure OpenAI", examples=["gpt-35-turbo"]
+    )
+    azure_api_version: Optional[str] = Field(
+        "2024-02-01", description="用于 Azure OpenAI", examples=["2024-02-01"]
+    )
     app_id: Optional[str] = Field("", description="讯飞星火需要", examples=["404abcde"])
     max_tokens: Optional[PositiveInt] = Field(None, examples=[4096, 8192])
     max_input_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 2048])
