@@ -22,6 +22,7 @@ from .ollama import OllamaModel
 from .openai import AzureOpenAIModel, OpenAICompatibleModel, OpenAIModel
 from .openrouter import OpenRouterModel
 from .perplexity import PerplexityModel
+from .skywork import SkyWorkModel
 from .stepfun import StepFunModel
 from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
@@ -50,6 +51,7 @@ __all__ = [
     OpenRouterModel,
     PerplexityModel,
     RemoteLanguageModel,
+    SkyWorkModel,
     StepFunModel,
     ToolMessage,
     UserMessage,
