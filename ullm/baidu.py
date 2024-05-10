@@ -596,9 +596,6 @@ class BaiduModel(HttpServiceModel):
         if system:
             result["system"] = system
 
-        for msg in result["messages"]:
-            print("        ", msg)
-
         return result
 
     @validate_call

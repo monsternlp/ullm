@@ -268,7 +268,6 @@ class AnthropicModel(HttpServiceModel):
     def _convert_generation_config(
         self, config: GenerateConfig, system: Optional[str] = None
     ) -> Dict[str, Any]:
-        print(config)
         return {
             "model": self.model,
             "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
