@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.1.3
+
+Fixed
+
+- `jsonschema` is missing in dependencies.
+
 ## v0.1.2
 
 Misc
