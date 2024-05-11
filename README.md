@@ -1,5 +1,5 @@
 <h1 align="center">ullm</h1>
-<p align="center">A unified interface for local Large Language Model(LLM) models and online LLM providers.</p>
+<p align="center">A unified interface for local Large Language Models(LLM) and online LLM providers.</p>
 <h4 align="center">
     <a href="https://pypi.org/project/ullm/" target="_blank">
         <img src="https://shields.io/pypi/v/ullm.svg" alt="PyPI Version">
