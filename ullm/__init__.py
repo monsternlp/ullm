@@ -11,6 +11,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .cloudflare import CloudflareModel
 from .cohere import CohereModel
 from .deepseek import DeepSeekModel
 from .google import GoogleModel
@@ -34,6 +35,7 @@ __all__ = [
     AzureOpenAIModel,
     BaichuanModel,
     BaiduModel,
+    CloudflareModel,
     CohereModel,
     DeepSeekModel,
     GenerateConfig,
