@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## v0.2.0
+
+Fixed
+
+- Fixed typo in `README.md`
+- `tabulate` is missing in dependencies
+
+
+Added
+
+- Supported `gpt-4o` in `OpenAIModel` and `OpenRouterModel`
+- Implemented `SkyWorkModel`
+- Implemented `CloudflareModel`
+- Implemented `TogetherAIModel`
+
 ## v0.1.3
 
 Fixed
