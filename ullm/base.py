@@ -279,6 +279,11 @@ class RemoteLanguageModelConfig(ModelConfig):
     top_k: Optional[NonNegativeInt] = Field(None, examples=[50, 100])
     stop_sequences: Optional[List[str]] = Field(None, examples=[["stop1", "stop2"]])
     http_proxy: Optional[HttpUrl] = Field(None, examples=["https://example-proxy.com"])
+    cf_account_id: Optional[SecretStr] = Field(
+        None,
+        description="Cloudflare Account ID",
+        examples=["fe18f2a883e6401c9ee72ab358714088"],
+    )
 
 
 class RemoteLanguageModelMetaInfo(BaseModel):

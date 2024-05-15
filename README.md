@@ -45,7 +45,7 @@ ullm 希望能为本地模型以及众多在线 LLM 服务提供统一的调用�
 
 ## 功能与特性
 
-- 支持 OpenAI 等 18 个在线 LLM 服务，详见「[在线服务](#在线服务)」一节
+- 支持 OpenAI 等 21 个在线 LLM 服务，详见「[在线服务](#在线服务)」一节
 - 支持和 OpenAI 接口兼容的自建服务
 - 支持 Ollama API
 - 配置化的使用方式，为所有不同模型及服务提供统一的初始化方式，详见「[使用](#使用)」一节
@@ -75,6 +75,7 @@ TBD
 | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)     | azure-openai      |       20 |            4 |                     11 |            0 |
 | [百川智能](https://platform.baichuan-ai.com/docs/api)     | baichuan          |        4 |            0 |                      0 |            2 |
 | [百度](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu)     | baidu             |       46 |            0 |                     24 |           12 |
+| [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) | cloudflare        |       35 |               0 |             0 |               0 |
 | [Cohere](https://docs.cohere.com/reference/about)     | cohere            |       12 |            0 |                      4 |            6 |
 | [DeepSeek](https://platform.deepseek.com/docs)     | deepseek          |        2 |            0 |                      0 |            0 |
 | [Google](https://ai.google.dev/gemini-api/docs)     | google            |        3 |            2 |                      2 |            0 |
@@ -85,7 +86,9 @@ TBD
 | [OpenAI](https://platform.openai.com/docs/api-reference/chat)      | openai            |       20 |            4 |                     11 |            0 |
 | [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      127 |           13 |                    127 |            4 |
 | [Perplexity](https://docs.perplexity.ai/docs/getting-started)     | perplexity        |        7 |            0 |                      0 |            2 |
+| [天工](https://model-platform.tiangong.cn/api-reference) | skywork           |        1 |               0 |             0 |               0 |
 | [阶跃星辰](https://platform.stepfun.com/docs/Chat/chat-completion-create)     | stepfun           |        3 |            1 |                      0 |            0 |
+| [Together AI](https://docs.together.ai/docs/quickstart) | together          |       58 |               0 |            58 |               0 |
 | [智谱](https://open.bigmodel.cn/dev/api)     | zhipu             |        5 |            1 |                      4 |            2 |
 | OpenAI 接口兼容的服务     | openai-compatible |          |              |                        |              |
 | Ollama API     | ollama            |          |              |                        |              |

@@ -11,6 +11,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .cloudflare import CloudflareModel
 from .cohere import CohereModel
 from .deepseek import DeepSeekModel
 from .google import GoogleModel
@@ -22,7 +23,9 @@ from .ollama import OllamaModel
 from .openai import AzureOpenAIModel, OpenAICompatibleModel, OpenAIModel
 from .openrouter import OpenRouterModel
 from .perplexity import PerplexityModel
+from .skywork import SkyWorkModel
 from .stepfun import StepFunModel
+from .together import TogetherAIModel
 from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
 
@@ -33,6 +36,7 @@ __all__ = [
     AzureOpenAIModel,
     BaichuanModel,
     BaiduModel,
+    CloudflareModel,
     CohereModel,
     DeepSeekModel,
     GenerateConfig,
@@ -50,7 +54,9 @@ __all__ = [
     OpenRouterModel,
     PerplexityModel,
     RemoteLanguageModel,
+    SkyWorkModel,
     StepFunModel,
+    TogetherAIModel,
     ToolMessage,
     UserMessage,
     ZeroOneAIModel,

@@ -173,6 +173,7 @@ class OpenRouterModel(OpenAICompatibleModel):
         "openai/gpt-4-turbo",
         "openai/gpt-4-turbo-preview",
         "openai/gpt-4-vision-preview",
+        "openai/gpt-4o",
         "openchat/openchat-7b",
         "openchat/openchat-7b:free",
         "openrouter/auto",
@@ -221,6 +222,7 @@ class OpenRouterModel(OpenAICompatibleModel):
         "gemini-pro-1.5",
         "gpt-4-turbo",
         "gpt-4-vision-preview",
+        "gpt-4o",
         "llava-13b",  # https://openrouter.ai/models/haotian-liu/llava-13b
         "nous-hermes-2-vision-7b",  # https://openrouter.ai/models/nousresearch/nous-hermes-2-vision-7b
     ]
