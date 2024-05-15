@@ -325,12 +325,14 @@ class OpenAIModel(OpenAICompatibleModel):
             "gpt-4-turbo",
             "gpt-4-turbo-2024-04-09",
             "gpt-4-turbo-preview",
+            "gpt-4o",
         ],
         visual_language_models=[
             "gpt-4-vision-preview",
             "gpt-4-1106-vision-preview",
             "gpt-4-turbo",
             "gpt-4-turbo-2024-04-09",
+            "gpt-4o",
         ],
         # https://platform.openai.com/docs/guides/function-calling
         tool_models=[
@@ -345,6 +347,7 @@ class OpenAIModel(OpenAICompatibleModel):
             "gpt-4-turbo",
             "gpt-4-turbo-2024-04-09",
             "gpt-4-turbo-preview",
+            "gpt-4o",
         ],
         required_config_fields=["api_key"],
     )
