@@ -111,6 +111,7 @@ class MiniMaxModel(OpenAICompatibleModel):
         language_models=[
             "abab6.5-chat",
             "abab6.5s-chat",
+            "abab6.5g-chat",
             "abab6-chat",
             "abab5.5-chat",
             "abab5.5s-chat",
@@ -119,6 +120,7 @@ class MiniMaxModel(OpenAICompatibleModel):
         tool_models=[
             "abab6.5-chat",
             "abab6.5s-chat",
+            "abab6.5g-chat",
             "abab6-chat",
             "abab5.5-chat",
             "abab5.5s-chat",
