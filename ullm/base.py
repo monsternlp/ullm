@@ -240,18 +240,28 @@ class RemoteLanguageModelConfig(ModelConfig):
     provider: str = Field(..., description="模型提供方名称")
     model: str = Field(..., description="模型名称")
     is_visual_model: Optional[bool] = Field(
-        False, description="该模型是否支持视觉理解，用于自定义服务", examples=[True, False]
+        False,
+        description="该模型是否支持视觉理解，用于自定义服务",
+        examples=[True, False],
+        json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_tool_model: Optional[bool] = Field(
-        False, description="是否支持工具，用于自定义服务", examples=[True, False]
+        False,
+        description="是否支持工具，用于自定义服务",
+        examples=[True, False],
+        json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_online_model: Optional[bool] = Field(
-        False, description="是否支持联网，用于自定义服务", examples=[True, False]
+        False,
+        description="是否支持联网，用于自定义服务",
+        examples=[True, False],
+        json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_url: Optional[HttpUrl] = Field(
         None,
         description="有的 provider 并无公开的固定 URL 需要自己指定，如自己部署的 API 代理服务",
         examples=["http://example.com/api/v1/chat/completion"],
+        json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_key: Optional[SecretStr] = Field(
         "", examples=["sk-************************************************"]
@@ -260,17 +270,32 @@ class RemoteLanguageModelConfig(ModelConfig):
         "",
         description="讯飞星火 api_secret, 文心一言 secret key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
+        json_schema_extra={"providers": ["iflytek", "baidu"]},
     )
     azure_endpoint: Optional[str] = Field(
-        "", description="用于 Azure OpenAI", examples=["https://example-endpoint.openai.azure.com/"]
+        "",
+        description="用于 Azure OpenAI",
+        examples=["https://example-endpoint.openai.azure.com/"],
+        json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_deployment_name: Optional[str] = Field(
-        "", description="用于 Azure OpenAI", examples=["gpt-35-turbo"]
+        "",
+        description="用于 Azure OpenAI",
+        examples=["gpt-35-turbo"],
+        json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_api_version: Optional[str] = Field(
-        "2024-02-01", description="用于 Azure OpenAI", examples=["2024-02-01"]
+        "2024-02-01",
+        description="用于 Azure OpenAI",
+        examples=["2024-02-01"],
+        json_schema_extra={"providers": ["azure-openai"]},
     )
-    app_id: Optional[str] = Field("", description="讯飞星火需要", examples=["404abcde"])
+    app_id: Optional[str] = Field(
+        "",
+        description="讯飞星火需要",
+        examples=["404abcde"],
+        json_schema_extra={"providers": ["iflytek"]},
+    )
     max_tokens: Optional[PositiveInt] = Field(None, examples=[4096, 8192])
     max_input_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 2048])
     max_output_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 4096])
@@ -283,6 +308,7 @@ class RemoteLanguageModelConfig(ModelConfig):
         None,
         description="Cloudflare Account ID",
         examples=["fe18f2a883e6401c9ee72ab358714088"],
+        json_schema_extra={"providers": ["cloudflare"]},
     )
 
 
@@ -381,20 +407,12 @@ class RemoteLanguageModel(LanguageModel):
             )
 
         optional_config = {}
-        ignored_fields = [
-            "is_visual_model",
-            "is_online_model",
-            "is_tool_model",
-            "api_url",
-            "api_key",
-            "secret_key",
-            "app_id",
-            "azure_endpoint",
-            "azure_api_version",
-            "azure_deployment_name",
-        ]
         for field, field_info in RemoteLanguageModelConfig.model_fields.items():
-            if field in required_config or field in ignored_fields:
+            if field in required_config:
+                continue
+
+            extra = field_info.json_schema_extra
+            if extra and provider not in extra.get("providers", []):
                 continue
 
             optional_config[field] = random.choice(field_info.examples)
