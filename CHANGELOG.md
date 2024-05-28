@@ -23,7 +23,7 @@ Changed
 - Supported new model `abab6.5g-chat` in `MiniMaxModel`
 - Supported 2 new models in `AlibabaModel`: `qwen-max-0428`, `qwen-max-0428-online`
 - Supported 5 new models in `BaiduModel`: `ERNIE-4.0-8K-Preview-0518`, `ERNIE-3.5-128K`, `Qianfan_Chinese_Llama_2-70B`, `ERNIE-4.0-8K-Preview-0518-online`, `ERNIE-3.5-128K-online`
-- Supported 6 new models in `BaiduModel`: `Baichuan3-Turbo`, `Baichuan3-Turbo-128k`, `Baichuan3-Turbo-online`, `Baichuan3-Turbo-128k-online`, `Baichuan4`, `Baichuan4-online`
+- Supported 6 new models in `BaichuanModel`: `Baichuan3-Turbo`, `Baichuan3-Turbo-128k`, `Baichuan3-Turbo-online`, `Baichuan3-Turbo-128k-online`, `Baichuan4`, `Baichuan4-online`
 - Updated `BaichuanModel` to support tools calling
 
 ## v0.2.0
