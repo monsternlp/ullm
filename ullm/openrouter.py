@@ -265,10 +265,8 @@ class OpenRouterModel(OpenAICompatibleModel):
         visual_language_models=_VISUAL_MODELS,
         tool_models=_SUPPORTED_MODELS,
         online_models=[
-            "pplx-70b-online",
-            "pplx-7b-online",
-            "sonar-medium-online",
-            "sonar-small-online",
+            "llama-3-sonar-large-32k-online",
+            "llama-3-sonar-small-32k-online",
         ],
     )
     REQUEST_BODY_CLS = OpenRouterRequestBody
