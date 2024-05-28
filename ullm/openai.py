@@ -325,7 +325,6 @@ class OpenAIModel(OpenAICompatibleModel):
             "gpt-4-turbo",
             "gpt-4-turbo-2024-04-09",
             "gpt-4-turbo-preview",
-            "gpt-4o",
         ],
         visual_language_models=[
             "gpt-4-vision-preview",

@@ -28,11 +28,18 @@ class ZeroOneAIModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.lingyiwanwu.com/v1/chat/completions",
         language_models=[
-            "yi-34b-chat-0205",
-            "yi-34b-chat-200k",
+            "yi-large",
+            "yi-medium",
+            "yi-medium-200k",
+            "yi-spark",
+            "yi-large-rag",
+            "yi-large-turbo",
+            "yi-large-preview",
+            "yi-large-rag-preview",
         ],
-        visual_language_models=["yi-vl-plus"],
+        visual_language_models=["yi-vision"],
         tool_models=[],
+        online_models=["yi-large-rag", "yi-large-rag-preview"],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = ZeroOneAIRequestBody

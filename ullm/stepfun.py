@@ -28,10 +28,13 @@ class StepFunModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.stepfun.com/v1/chat/completions",
         language_models=[
+            "step-1-8k",
             "step-1-32k",
-            "step-1-200k",
+            "step-1-128k",
+            "step-1-256k",
         ],
         visual_language_models=[
+            "step-1v-8k",
             "step-1v-32k",
         ],
         tool_models=[],
