@@ -1,8 +1,9 @@
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, confloat, conint, conlist
 
 from .base import (
+    GenerateConfig,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
@@ -271,3 +272,20 @@ class OpenRouterModel(OpenAICompatibleModel):
     )
     REQUEST_BODY_CLS = OpenRouterRequestBody
     RESPONSE_BODY_CLS = OpenRouterResponseBody
+
+    def _convert_generation_config(
+        self, config: GenerateConfig, system: Optional[str] = None
+    ) -> Dict[str, Any]:
+        model_prefix = self._MODEL_PREFIX_MAP[self.model]
+        return {
+            "model": f"{model_prefix}/{self.model}",
+            "frequency_penalty": config.frequency_penalty,
+            "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
+            "presence_penalty": config.presence_penalty,
+            "response_format": {"type": config.response_format} if config.response_format else None,
+            "stop": config.stop_sequences or self.config.stop_sequences,
+            "temperature": config.temperature or self.config.temperature,
+            "top_p": config.top_p or self.config.top_p,
+            "top_k": config.top_k or self.config.top_k,
+            "repetition_penalty": config.repetition_penalty,
+        }
