@@ -82,12 +82,11 @@ class ToolCall(BaseModel):
     function: Optional[FunctionCall] = None
 
     @model_validator(mode="after")
-    @classmethod
-    def check_tool(cls, data):
-        if data.type == "function" and not data.function:
+    def check_tool(self):
+        if self.type == "function" and not self.function:
             raise ValueError("`function` should not be empty!")
 
-        return data
+        return self
 
 
 class AssistantMessage(BaseModel):
