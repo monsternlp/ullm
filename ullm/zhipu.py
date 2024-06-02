@@ -43,6 +43,7 @@ class ZhipuAITool(BaseModel):
     @classmethod
     def check_type(cls, data):
         assert data.get(data["type"]) is not None
+        return data
 
     @classmethod
     def from_standard(cls, tool: Tool):
