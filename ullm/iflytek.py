@@ -230,7 +230,7 @@ class IflyTekModel(RemoteLanguageModel):
     def chat(
         self,
         messages: conlist(ChatMessage, min_length=1),
-        config: GenerateConfig = None,
+        config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:
         self._validate_model(messages)
