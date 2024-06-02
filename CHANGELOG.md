@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v0.3.1
+
+Fixed
+
+- Fixed typo in `README.md`
+- Fixed `config` parameter of`IflyTekModel.chat`
+- Fixed validator of `ZhipuAITool`
+- Fixed `ZhipuAIModel._convert_tools`
+- Fixed `OpenRouter`: add model prefix in `_convert_generation_config`
+- Fixed validator of `ToolCall`
+
 ## v0.3.0
 
 Changed
