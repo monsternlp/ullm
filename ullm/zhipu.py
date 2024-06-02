@@ -117,11 +117,11 @@ class ZhipuAIModel(OpenAICompatibleModel):
 
         if self.is_online_model():
             tools = tools or []
-            tools.append(ZhipuAITool(type="web_search"), web_search=ZhipuWebSearchTool(enable=True))
+            tools.append(ZhipuAITool(type="web_search", web_search=ZhipuWebSearchTool(enable=True)))
         else:
             tools = tools or []
             tools.append(
-                ZhipuAITool(type="web_search"), web_search=ZhipuWebSearchTool(enable=False)
+                ZhipuAITool(type="web_search", web_search=ZhipuWebSearchTool(enable=False))
             )
 
         return {"tools": tools}
