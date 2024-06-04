@@ -21,15 +21,15 @@ def list_providers():
     print(tabulate(data, headers=headers, tablefmt="github"))
 
 
-@main.command("list-models")
+@main.command("list-supported-models")
 @click.option(
     "--providers", help="List models of these providers, separate multi providers with commas"
 )
 @click.option("--only-visual", is_flag=True)
 @click.option("--only-online", is_flag=True)
 @click.option("--only-tool", is_flag=True)
-def list_models(providers, only_visual, only_online, only_tool):
-    """List all remote models"""
+def list_supported_models(providers, only_visual, only_online, only_tool):
+    """List all supported remote models"""
     providers = None if not providers else set(providers.split(","))
     models = RemoteLanguageModel.list_models(
         providers=providers, visual=only_visual, online=only_online, tools_enable=only_tool
