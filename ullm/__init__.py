@@ -16,6 +16,7 @@ from .cohere import CohereModel
 from .deepseek import DeepSeekModel
 from .google import GoogleModel
 from .groq import GroqModel
+from .hub import ModelHub
 from .iflytek import IflyTekModel
 from .minimax import MiniMaxModel
 from .moonshot import MoonshotModel
@@ -61,4 +62,5 @@ __all__ = [
     UserMessage,
     ZeroOneAIModel,
     ZhipuAIModel,
+    ModelHub,
 ]
