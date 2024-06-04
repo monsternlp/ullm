@@ -71,18 +71,30 @@ res = model.chat(messages)
 
 
 @main.command("chat")
-@click.option("-c", "--config-file", required=True)
+@click.option("--model", help="Model ID registered in hub, or a model config file", required=True)
+@click.option("--model-hub-db-url", help="Model hub database url")
 @click.option("--system")
 @click.option("--temperature", type=float, default=0.7)
 @click.option("--max-output-tokens", type=int, default=1024)
 @click.option("--keep-turns-num", type=int, default=3)
-def chat(config_file, system, temperature, max_output_tokens, keep_turns_num):
+def chat(model, model_hub_db_url, system, temperature, max_output_tokens, keep_turns_num):
     """A simple chat demo"""
-    config = None
-    with open(config_file) as f:
-        config = json.load(f)
+    model_id_or_config_file = model
+    if os.path.exists(model_id_or_config_file):
+        config, config_file = None, model_id_or_config_file
+        with open(config_file) as f:
+            config = json.load(f)
 
-    model = LanguageModel.from_config(config)
+        model = LanguageModel.from_config(config)
+    else:
+        model = ModelHub(model_hub_db_url).get_model(model_id_or_config_file)
+
+    if not model:
+        click.secho(
+            f"`{model_id_or_config_file}` is not a valid model id or a valid model config file"
+        )
+        return -1
+
     generate_config = {"temperature": temperature, "max_output_tokens": max_output_tokens}
     messages = []
     while True:
