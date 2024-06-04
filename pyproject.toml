@@ -15,6 +15,7 @@ dependencies = [
     "deepmerge",
     "jsonschema",
     "tabulate",
+    "peewee",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
