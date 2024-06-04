@@ -1,10 +1,13 @@
 import json
+import os
 from operator import itemgetter
 
+import arrow
 import click
 from tabulate import tabulate
 
 from .base import LanguageModel, RemoteLanguageModel
+from .hub import ModelHub
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -94,6 +97,38 @@ def chat(config_file, system, temperature, max_output_tokens, keep_turns_num):
         response = model.chat(messages, generate_config)
         print(f"Bot: {response.content}\n")
         messages.append(response.to_message())
+
+
+@main.command("register-model")
+@click.option("--db-url", help="Model hub database url")
+@click.option("--model-id", required=True)
+@click.option("--model-config-file", required=True)
+def register_model(db_url, model_id, model_config_file):
+    "Register a new model to hub"
+    hub = ModelHub(db_url)
+    model_config = json.load(open(model_config_file))
+    model = LanguageModel.from_config(model_config)
+    hub.register_model(model, model_id)
+
+
+@main.command("list-models")
+@click.option("--db-url", help="Model hub database url")
+def list_models(db_url):
+    """List all registered models"""
+    hub = ModelHub(db_url)
+    headers = ["Model ID", "Model Name", "Remote", "Created"]
+    data = []
+    for model_record in hub.list_models():
+        data.append(
+            [
+                model_record.model_id,
+                model_record.model_name,
+                model_record.remote,
+                str(arrow.get(model_record.created, tzinfo="UTC")),
+            ]
+        )
+
+    print(tabulate(data, headers=headers, tablefmt="github"))
 
 
 if __name__ == "__main__":
