@@ -23,6 +23,7 @@ from pydantic import (
     PositiveInt,
     SecretStr,
     conlist,
+    field_serializer,
     field_validator,
     model_validator,
     validate_call,
@@ -309,6 +310,10 @@ class RemoteLanguageModelConfig(ModelConfig):
         examples=["fe18f2a883e6401c9ee72ab358714088"],
         json_schema_extra={"providers": ["cloudflare"]},
     )
+
+    @field_serializer("api_key", "secret_key", "cf_account_id", when_used="json")
+    def dump_secret_json(self, secret):
+        return secret.get_secret_value() if secret else None
 
 
 class RemoteLanguageModelMetaInfo(BaseModel):

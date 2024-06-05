@@ -37,9 +37,11 @@ ullm 希望能为本地模型以及众多在线 LLM 服务提供统一的调用�
   - [聊天](#聊天)
 - [命令行](#命令行)
   - [list-providers](#list-providers)
-  - [list-models](#list-models)
+  - [list-supported-models](#list-supported-models)
   - [print-example](#print-example)
   - [chat](#chat)
+  - [register-model](#register-model)
+  - [list-models](#list-models)
 
 <!-- /TOC -->
 
@@ -360,11 +362,11 @@ Options:
   -h, --help  Show this message and exit.
 ```
 
-### `list-models`
+### `list-supported-models`
 
 
 ```
-Usage: ullm list-models [OPTIONS]
+Usage: ullm list-supported-models [OPTIONS]
 
   List all remote models
 
@@ -398,10 +400,41 @@ Usage: ullm chat [OPTIONS]
   A simple chat demo
 
 Options:
-  -c, --config-file TEXT       [required]
+  --model TEXT                 Model ID registered in hub, or a model config
+                               file  [required]
+  --model-hub-db-url TEXT      Model hub database url
   --system TEXT
   --temperature FLOAT
   --max-output-tokens INTEGER
   --keep-turns-num INTEGER
   -h, --help                   Show this message and exit.
+```
+
+### `register-model`
+
+
+```shell
+Usage: ullm register-model [OPTIONS]
+
+  Register a new model to hub
+
+Options:
+  --db-url TEXT             Model hub database url
+  --model-id TEXT           [required]
+  --model-config-file TEXT  [required]
+  -h, --help                Show this message and exit.
+```
+
+
+
+### `list-models`
+
+```shell
+Usage: ullm list-models [OPTIONS]
+
+  List all registered models
+
+Options:
+  --db-url TEXT  Model hub database url
+  -h, --help     Show this message and exit.
 ```
