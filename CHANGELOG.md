@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## v0.4.0
+
+Added
+
+- Implemented `ModelHub` to manage models
+- Implemented new command `register-model` to register model in `ModelHub`
+- Implemented new command `list-models` to list models registered in `ModelHub`
+
+Fixed
+
+- Customized serializer for `SecretStr` fields in `RemoteLanguageModelConfig`
+
+Changed
+
+- Renamed command `list-models` to `list-supported-models`
+- Optimized command `chat` to support loading model from `ModelHub`
+
+
 ## v0.3.1
 
 Fixed
