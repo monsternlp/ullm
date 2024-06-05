@@ -32,6 +32,7 @@ ullm 希望能为本地模型以及众多在线 LLM 服务提供统一的调用�
 - [使用](#使用)
   - [创建模型配置](#创建模型配置)
   - [实例化模型](#实例化模型)
+  - [管理模型](#管理模型)
   - [设置生成参数](#设置生成参数)
   - [生成文本](#生成文本)
   - [聊天](#聊天)
@@ -239,6 +240,71 @@ model = LanguageModel.from_config(model_config)
 
 - 如果配置中缺失了一些必需字段，会报错
 - 如果模型名称不在支持的模型列表里，会报错
+
+### 管理模型
+
+`ullm` 实现了 `ModelHub` 来提供简易的模型管理，使用它可以
+
+- 将模型实例的配置注册到 `ModelHub` 中
+
+  ```python
+  from ullm import LanguageModel, ModelHub
+
+  config = {
+      # required fields
+      "type": 'remote',
+      "model": 'gpt-3.5-turbo',
+      "provider": 'openai',
+      "api_key": 'sk-************************************************',
+
+      # optional fields
+      "max_tokens": 4096,
+      "max_input_tokens": 1024,
+      "max_output_tokens": 1024,
+      "temperature": 0.8,
+      "top_p": 1.0,
+      "Top_k": 50,
+      "stop_sequences": ['stop1', 'stop2'],
+      "http_proxy": 'https://example-proxy.com',
+  }
+  model = LanguageModel.from_config(config)
+
+  hub = ModelHub()
+  hub.register_model(model, "openai:gpt-3.5-turbo")
+  ```
+
+  或者也可以使用命令行工具来注册模型
+
+  ```shell
+  ullm register-model --model-id "openai:gpt-3.5-turbo" --model-config-file openai.json
+  ```
+
+- 通过注册时分配的唯一性 Model ID 从 `ModelHub` 中获取一个模型实例来进行聊天
+
+  ```python
+  model = hub.get_model("openai-gpt-3.5-turbo")
+  model.chat([{"role": "user", "content": "Hello"}])
+  ```
+
+默认情况下 `ModelHub` 会生成一个 `SQLite3` 的数据库文件 `$HOME/.ullm.db`，并在这个数据库中存储已注册的模型实例配置，若希望更改数据库文件路径或使用其他数据库引擎（如 `MySQL` 或 `PostPostgres`），可以在实例化 `ModelHub` 时设置数据库 URL：
+
+- 使用 `SQLite3` 并更改数据库文件路径为 `/home/user/mymodels.db`
+
+  ```python
+  hub = ModelHub("sqlite:////home/user/my.db")
+  ```
+
+- 使用 `MySQL`
+
+  ```python
+  hub = ModelHub("mysql://user:passwd@ip:port/my_db")
+  ```
+
+- 使用 `Postgres`
+
+  ```python
+  hub = ModelHub("postgresql://postgres:my_password@localhost:5432/my_db")
+  ```
 
 ### 设置生成参数
 
