@@ -204,6 +204,11 @@ class AlibabaModel(HttpServiceModel):
             "llama3-8b-instruct",
             "llama3-70b-instruct",
             # noqa: https://help.aliyun.com/zh/dashscope/developer-reference/tongyi-qianwen-7b-14b-72b-api-detailes?spm=a2c4g.11186623.0.0.34ad23edoCQT3i#8f79b5d0f8ker
+            "qwen2-57b-a14b-instruct",
+            "qwen2-72b-instruct",
+            "qwen2-7b-instruct",
+            "qwen2-1.5b-instruct",
+            "qwen2-0.5b-instruct",
             "qwen1.5-110b-chat",
             "qwen1.5-72b-chat",
             "qwen1.5-32b-chat",
