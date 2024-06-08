@@ -55,6 +55,7 @@ class TogetherAIModel(OpenAICompatibleModel):
         "Qwen/Qwen1.5-4B-Chat",
         "Qwen/Qwen1.5-72B-Chat",
         "Qwen/Qwen1.5-7B-Chat",
+        "Qwen/Qwen2-72B-Instruct",
         "Snowflake/snowflake-arctic-instruct",
         "Undi95/ReMM-SLERP-L2-13B",
         "Undi95/Toppy-M-7B",
