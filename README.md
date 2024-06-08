@@ -73,7 +73,7 @@ TBD
 | 平台 | Provider ID            | 模型数量 | 视觉模型数量 | 支持工具调用的模型数量 | 联网模型数量 |
 |------|-------------------|----------|--------------|------------------------|--------------|
 | [零一万物](https://platform.lingyiwanwu.com/docs)     | 01ai              |        9 |            1 |                      0 |            2 |
-| [阿里巴巴](https://help.aliyun.com/zh/dashscope/developer-reference/model-square/?spm=a2c4g.11186623.0.0.1cca23edHYSGqT)      | alibaba           |       46 |            4 |                      7 |            7 |
+| [阿里巴巴](https://help.aliyun.com/zh/dashscope/developer-reference/model-square/?spm=a2c4g.11186623.0.0.1cca23edHYSGqT)      | alibaba           |       51 |            4 |                      7 |            7 |
 | [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)     | anthropic         |        3 |            3 |                      3 |            0 |
 | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)     | azure-openai      |       20 |            4 |                     11 |            0 |
 | [百川智能](https://platform.baichuan-ai.com/docs/api)     | baichuan          |        10 |            0 |                      3 |            5 |
@@ -87,11 +87,11 @@ TBD
 | [MiniMax](https://www.minimaxi.com/document/algorithm-concept?id=6433f37594878d408fc8295d)     | minimax           |        6 |            0 |                      6 |            0 |
 | [Moonshot](https://platform.moonshot.cn/docs/api/chat#%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF)     | moonshot          |        3 |            0 |                      3 |            0 |
 | [OpenAI](https://platform.openai.com/docs/api-reference/chat)      | openai            |       21 |            5 |                     12 |            0 |
-| [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      158 |           16 |                    158 |            2 |
+| [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      162 |           16 |                    162 |            2 |
 | [Perplexity](https://docs.perplexity.ai/docs/getting-started)     | perplexity        |        7 |            0 |                      0 |            2 |
 | [天工](https://model-platform.tiangong.cn/api-reference) | skywork           |        1 |               0 |             0 |               0 |
 | [阶跃星辰](https://platform.stepfun.com/docs/Chat/chat-completion-create)     | stepfun           |        6 |            2 |                      0 |            0 |
-| [Together AI](https://docs.together.ai/docs/quickstart) | together          |       58 |               0 |            58 |               0 |
+| [Together AI](https://docs.together.ai/docs/quickstart) | together          |       59 |               0 |            59 |               0 |
 | [智谱](https://open.bigmodel.cn/dev/api)     | zhipu             |        5 |            1 |                      4 |            2 |
 | OpenAI 接口兼容的服务     | openai-compatible |          |              |                        |              |
 | Ollama API     | ollama            |          |              |                        |              |

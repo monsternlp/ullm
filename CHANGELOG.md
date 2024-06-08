@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v0.5.0
+
+Changed
+
+- Supported 5 new models in `AlibabaModel`: `qwen2-57b-a14b-instruct`, `qwen2-72b-instruct`, `qwen2-7b-instruct`, `qwen2-0.5b-instruct`
+- Supported new model `Qwen/Qwen2-72B-Instruct` in `TogetherAIModel`
+- Updated supported models in `OpenRouterModel`:
+
+  - Supported 6 new models: `dolphin-mixtral-8x22b`, `mistral-7b-instruct-v0.1`, `mistral-7b-instruct-v0.2`, `mistral-7b-instruct-v0.3`, `openchat-8b`, `qwen-2-72b-instruct`
+  - Removed 2 models: `cinematika-7b`, `cinematika-7b:free`
+
 ## v0.4.0
 
 Added
