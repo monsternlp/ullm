@@ -282,7 +282,7 @@ model = LanguageModel.from_config(model_config)
 - 通过注册时分配的唯一性 Model ID 从 `ModelHub` 中获取一个模型实例来进行聊天
 
   ```python
-  model = hub.get_model("openai-gpt-3.5-turbo")
+  model = hub.get_model("openai:gpt-3.5-turbo")
   model.chat([{"role": "user", "content": "Hello"}])
   ```
 
