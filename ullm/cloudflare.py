@@ -97,9 +97,9 @@ class CloudflareResponseBody(BaseModel):
 class CloudflareModel(HttpServiceModel):
     # https://developers.cloudflare.com/workers-ai/models/
     _MODEL_MAPPINGS = {
-        "codellama-7b-instruct-awq": "@hf/thebloke/codellama-7b-instruct-awq",
         "deepseek-coder-6.7b-base-awq": "@hf/thebloke/deepseek-coder-6.7b-base-awq",
         "deepseek-coder-6.7b-instruct-awq": "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+        "deepseek-math-7b-base": "@cf/deepseek-ai/deepseek-math-7b-base",
         "deepseek-math-7b-instruct": "@cf/deepseek-ai/deepseek-math-7b-instruct",
         "discolm-german-7b-v1-awq": "@cf/thebloke/discolm-german-7b-v1-awq",
         "falcon-7b-instruct": "@cf/tiiuae/falcon-7b-instruct",
@@ -110,17 +110,18 @@ class CloudflareModel(HttpServiceModel):
         "llama-2-13b-chat-awq": "@hf/thebloke/llama-2-13b-chat-awq",
         "llama-2-7b-chat-fp16": "@cf/meta/llama-2-7b-chat-fp16",
         "llama-2-7b-chat-hf-lora": "@cf/meta-llama/llama-2-7b-chat-hf-lora",
-        "llama-2-7b-chat-int8": "@cf/meta/llama-2-7b-chat-int8",
+        "llama-3-8b-instruct-awq": "@cf/meta/llama-3-8b-instruct-awq",
         "llama-3-8b-instruct": "@cf/meta/llama-3-8b-instruct",
+        "llama-3.1-8b-instruct-awq": "@cf/meta/llama-3.1-8b-instruct-awq",
+        "llama-3.1-8b-instruct-fp8": "@cf/meta/llama-3.1-8b-instruct-fp8",
+        "llama-3.1-8b-instruct": "@cf/meta/llama-3.1-8b-instruct",
         "llamaguard-7b-awq": "@hf/thebloke/llamaguard-7b-awq",
-        "meta-llama-3-8b-instruct": "@hf/meta-llama/meta-llama-3-8b-instruct",
         "mistral-7b-instruct-v0.1": "@cf/mistral/mistral-7b-instruct-v0.1",
         "mistral-7b-instruct-v0.1-awq": "@hf/thebloke/mistral-7b-instruct-v0.1-awq",
         "mistral-7b-instruct-v0.2": "@hf/mistral/mistral-7b-instruct-v0.2",
         "mistral-7b-instruct-v0.2-lora": "@cf/mistral/mistral-7b-instruct-v0.2-lora",
         "neural-chat-7b-v3-1-awq": "@hf/thebloke/neural-chat-7b-v3-1-awq",
         "openchat-3.5-0106": "@cf/openchat/openchat-3.5-0106",
-        "openchat_3.5-awq": "@hf/thebloke/openchat_3.5-awq",
         "openhermes-2.5-mistral-7b-awq": "@hf/thebloke/openhermes-2.5-mistral-7b-awq",
         "phi-2": "@cf/microsoft/phi-2",
         "qwen1.5-0.5b-chat": "@cf/qwen/qwen1.5-0.5b-chat",
@@ -137,7 +138,9 @@ class CloudflareModel(HttpServiceModel):
     META = RemoteLanguageModelMetaInfo(
         language_models=_LANGUAGE_MODELS,
         visual_language_models=[],
-        tool_models=[],
+        tool_models=[
+            "hermes-2-pro-mistral-7b",
+        ],
         online_models=[],
         required_config_fields=["api_key", "cf_account_id"],
     )
