@@ -72,7 +72,7 @@ BaichuanFunctionObject = OpenAIFunctionObject
 class BaichuanTool(BaseModel):
     type: Optional[Literal["web_search", "retrieval", "function"]] = None
     retrieval: Optional[BaichuanRetrievalObject] = None
-    web_search: Optional[BaichuanRetrievalObject] = None
+    web_search: Optional[BaichuanWebSearchObject] = None
     function: Optional[BaichuanFunctionObject] = None
 
     @classmethod
