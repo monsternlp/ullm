@@ -1,154 +1,56 @@
-import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
 from pydantic import (
     BaseModel,
     Field,
-    Json,
-    NonNegativeFloat,
-    PositiveInt,
     confloat,
     conint,
-    conlist,
-    validate_call,
 )
 
 from .base import (
-    AssistantMessage,
-    ChatMessage,
+    Citation,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    Tool,
-    ToolCall,
-    ToolChoice,
-    ToolMessage,
-    UserMessage,
+    TextPart,
+)
+from .openai import (
+    OpenAICompatibleModel,
+    OpenAIRequestBody,
+    OpenAIToolCall,
 )
 
 
-class CohereChatMessage(BaseModel):
-    role: Literal["SYSTEM", "USER", "CHATBOT"]
-    message: str
-
-    @classmethod
-    def from_standard(cls, message: ChatMessage):
-        if isinstance(ToolMessage, ToolMessage):
-            raise NotImplementedError
-
-        if isinstance(message, UserMessage):
-            return cls(role="USER", message="\n".join([part.text for part in message.content]))
-
-        if isinstance(message, AssistantMessage):
-            return cls(role="CHATBOT", message=message.content or "")
-
-
-class CohereWebSearchConnectorOptions(BaseModel):
-    site: str
-
-
-class CohereWebSearchConnector(BaseModel):
-    id: Literal["web-search"] = "web-search"
-    continue_on_failure: Optional[bool] = None
-    options: Optional[CohereWebSearchConnectorOptions] = None
-
-
-class CohereCustomConnector(BaseModel):
-    id: str
-    user_access_token: Optional[str] = None
-    continue_on_failure: Optional[bool] = None
-    options: Optional[Dict] = None
-
-
-class CohereDocument(BaseModel, extra="allow"):
+class CohereDocument(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
+    data: Dict[str, str]
 
 
+class CohereRequestBody(OpenAIRequestBody):
+    # reference: https://docs.cohere.com/v2/reference/chat
+    ## excluded parameters
+    stop: Optional[Any] = Field(None, exclude=True)
+    top_p: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(None, exclude=True)
+    logprobs: Optional[Any] = Field(None, exclude=True)
+    top_logprobs: Optional[Any] = Field(None, exclude=True)
+    n: Optional[Any] = Field(None, exclude=True)
+    tool_choice: Optional[Any] = Field(None, exclude=True)
+    user: Optional[Any] = Field(None, exclude=True)
 
-class CohereTool(BaseModel):
-    name: str
-    description: str
-    parameter_definitions: Optional[Dict[str, CohereToolParameterDefinition]] = None
-
-    @classmethod
-    def from_standard(cls, tool: Tool):
-        parameter_definitions = {}
-        for argument in tool.function.arguments or []:
-            parameter_definitions[argument.name] = argument.model_dump()
-
-        return cls(
-            name=tool.function.name,
-            description=tool.function.description,
-            parameter_definitions=parameter_definitions,
-        )
-
-
-class CohereToolCall(BaseModel):
-    name: str
-    parameters: Optional[Union[Json, Dict[str, Any]]] = {}
-
-    def to_standard(self):
-        return ToolCall(type="function", function={"name": self.name, "arguments": self.parameters})
-
-
-class CohereToolResult(BaseModel):
-    call: CohereToolCall
-    outputs: conlist(Dict[str, Any], min_length=1)
-
-
-class CohereRequestBody(BaseModel):
-    # reference: https://docs.cohere.com/reference/chat
-    message: str
-    model: str
-    stream: Optional[bool] = None
-    preamble: Optional[str] = None
-    chat_history: Optional[List[CohereChatMessage]] = None
-    conversation_id: Optional[str] = None
-    prompt_truncation: Optional[Literal["AUTO", "OFF"]] = None
-    connectors: Optional[List[Union[CohereWebSearchConnector, CohereCustomConnector]]] = None
-    search_queries_only: Optional[bool] = None
-    documents: Optional[List[CohereDocument]] = None
-    citation_quality: Optional[Literal["accurate", "fast"]] = None
-    temperature: Optional[NonNegativeFloat] = None
-    max_tokens: Optional[PositiveInt] = None
-    max_input_tokens: Optional[PositiveInt] = None
-    k: Optional[conint(ge=0, le=500)] = None
-    p: Optional[confloat(ge=0.01, le=0.99)] = None
-    seed: Optional[int] = None
-    stop_sequences: Optional[List[str]] = None
+    ## different parameters
     frequency_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
     presence_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
-    tools: Optional[List[CohereTool]] = None
-    tool_results: Optional[List[CohereToolResult]] = None
 
-
-class CohereCitation(BaseModel):
-    start: int
-    end: int
-    text: str
-    document_ids: conlist(str, min_length=1)
-
-
-class CohereSearchQuery(BaseModel):
-    text: str
-    generation_id: str
-
-
-class CohereSearchResult(BaseModel):
-    search_query: Optional[CohereSearchQuery] = None
-    connector: Union[CohereWebSearchConnector, CohereCustomConnector]
-    document_ids: Optional[List[str]] = None
-    error_message: Optional[str] = Field(None, description="An error message if the search failed.")
-    continue_on_failure: Optional[bool] = None
-
-
-class CohereResponseAPIVersion(BaseModel):
-    version: str
-    is_deprecated: Optional[bool] = None
-    is_experimental: Optional[bool] = None
+    ## cohere specific parameters
+    k: Optional[conint(ge=0, le=500)] = None
+    p: Optional[confloat(ge=0.01, le=0.99)] = None
+    documents: Optional[List[CohereDocument]] = None
+    citation_options: Optional[Dict[Literal["mode"], Literal["ACCURATE", "FAST", "OFF"]]] = None
+    safety_mode: Optional[Literal["CONTEXTUAL", "STRICT", "OFF"]] = None
+    stop_sequences: Optional[List[str]] = None
 
 
 class CohereResponseBilledUnits(BaseModel):
@@ -163,174 +65,89 @@ class CohereResponseTokens(BaseModel):
     output_tokens: Optional[int] = None
 
 
-class CohereResponseMeta(BaseModel):
-    api_version: Optional[CohereResponseAPIVersion] = None
+class CohereResponseUsage(BaseModel):
     billed_units: Optional[CohereResponseBilledUnits] = None
     tokens: CohereResponseTokens
-    warning: Optional[List[str]] = None
+
+
+class CohereResponseMessage(BaseModel):
+    role: Literal["assistant"]
+    tool_calls: Optional[List[OpenAIToolCall]] = None
+    tool_plan: Optional[str] = None
+    content: Optional[List[TextPart]] = None
+    citations: Optional[List[Citation]] = None
 
 
 class CohereResponseBody(BaseModel):
-    text: str
-    chat_history: List[CohereChatMessage]
-    generation_id: Optional[str] = None
-    citations: Optional[List[CohereCitation]] = None
-    documents: Optional[List[CohereDocument]] = None
-    is_search_required: Optional[bool] = None
-    search_queries: Optional[List[CohereSearchQuery]] = None
-    search_results: Optional[List[CohereSearchResult]] = None
-    finish_reason: Literal[
-        "COMPLETE", "ERROR", "ERROR_TOXIC", "ERROR_LIMIT", "USER_CANCEL", "MAX_TOKENS"
-    ]
-    tool_calls: Optional[List[CohereToolCall]] = None
-    meta: CohereResponseMeta
+    id: str
+    finish_reason: Literal["COMPLETE", "STOP_SEQUENCES", "MAX_TOKENS", "TOOL_CALL", "ERROR"]
+    message: CohereResponseMessage
+    usage: CohereResponseUsage
 
     def to_standard(self, model: str = None):
         tool_calls = (
-            [tool_call.to_standard() for tool_call in self.tool_calls] if self.tool_calls else None
+            [tool_call.to_standard() for tool_call in self.message.tool_calls]
+            if self.message.tool_calls
+            else None
         )
         total_tokens = None
-        if self.meta.tokens.input_tokens is not None and self.meta.tokens.output_tokens is not None:
-            total_tokens = self.meta.tokens.input_tokens + self.meta.tokens.output_tokens
+        if (
+            self.usage.tokens.input_tokens is not None
+            and self.usage.tokens.output_tokens is not None
+        ):
+            total_tokens = self.usage.tokens.input_tokens + self.usage.tokens.output_tokens
 
+        content = "" if not self.message.content else self.message.content[0].text
         return GenerationResult(
             model=model,
             stop_reason=self.finish_reason,
-            content=self.text,
+            content=content,
             tool_calls=tool_calls,
-            input_tokens=self.meta.tokens.input_tokens,
-            output_tokens=self.meta.tokens.output_tokens,
+            citations=self.message.citations,
+            input_tokens=self.usage.tokens.input_tokens,
+            output_tokens=self.usage.tokens.output_tokens,
             total_tokens=total_tokens,
         )
 
 
 @RemoteLanguageModel.register("cohere")
-class CohereModel(HttpServiceModel):
+class CohereModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
-        api_url="https://api.cohere.ai/v1/chat",
+        api_url="https://api.cohere.ai/v2/chat",
         language_models=[
+            "c4ai-aya-23-35b",
+            "c4ai-aya-23-8b",
             "command",
             "command-nightly",
             "command-light",
             "command-light-nightly",
             "command-r",
+            "command-r-03-2024",
+            "command-r-08-2024",
             "command-r-plus",
-            "command-online",
-            "command-nightly-online",
-            "command-light-online",
-            "command-light-nightly-online",
-            "command-r-online",
-            "command-r-plus-online",
+            "command-r-plus-04-2024",
+            "command-r-plus-08-2024",
         ],
         visual_language_models=[],
         tool_models=[
             "command-r",
-            "command-r-online",
+            "command-r-03-2024",
+            "command-r-08-2024",
             "command-r-plus",
-            "command-r-plus-online",
+            "command-r-plus-04-2024",
+            "command-r-plus-08-2024",
         ],
-        online_models=[
-            "command-online",
-            "command-nightly-online",
-            "command-light-online",
-            "command-light-nightly-online",
-            "command-r-online",
-            "command-r-plus-online",
-        ],
+        online_models=[],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = CohereRequestBody
     RESPONSE_BODY_CLS = CohereResponseBody
 
-    def _make_api_headers(self):
-        return {"Authorization": f"Bearer {self.config.api_key.get_secret_value()}"}
-
-    @classmethod
-    def _convert_message(cls, message: ChatMessage):
-        pass
-
-    @validate_call
-    def _convert_messages(
-        self,
-        messages: conlist(ChatMessage, min_length=1),
-        system: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        merged_messages = []
-        tool_results = {}
-        for message in messages:
-            if isinstance(message, UserMessage):
-                merged_messages.append(CohereChatMessage.from_standard(message))
-            elif isinstance(message, AssistantMessage):
-                if message.tool_calls:
-                    if not merged_messages:
-                        continue
-
-                    index = len(merged_messages) - 1
-                    tool_results[index] = {"calls": [], "results": {}}
-                    for tool_call in message.tool_calls:
-                        tool_results[index]["calls"].append(
-                            {
-                                "id": tool_call.id,
-                                "name": tool_call.function.name,
-                                "parameters": tool_call.function.arguments,
-                            }
-                        )
-                else:
-                    merged_messages.append(CohereChatMessage.from_standard(message))
-            elif isinstance(message, ToolMessage):
-                index = len(merged_messages) - 1
-                if index < 0 or index not in tool_results:
-                    continue
-
-                output = None
-                try:
-                    output = json.loads(message.tool_result)
-                except (TypeError, json.JSONDecodeError):
-                    output = {"content": message.tool_result}
-
-                tool_results[index]["results"].setdefault(message.tool_call_id, []).append(output)
-
-        result = {"message": merged_messages[-1].message, "chat_history": merged_messages[:-1]}
-        final_index = len(merged_messages) - 1
-        if final_index not in tool_results:
-            return result
-
-        result["tool_results"] = []
-        for tool_call in tool_results[final_index]["calls"]:
-            call_outputs = tool_results[final_index]["results"].get(tool_call["id"], [])
-            if not call_outputs:
-                continue
-
-            result["tool_results"].append(
-                {
-                    "call": {
-                        "name": tool_call["name"],
-                        "parameters": tool_call["parameters"],
-                    },
-                    "outputs": call_outputs,
-                }
-            )
-
-        return result
-
-    @validate_call
-    def _convert_tools(
-        self, tools: Optional[List[Tool]] = None, tool_choice: Optional[ToolChoice] = None
-    ) -> Dict[str, Any]:
-        if tools:
-            tools = [CohereTool.from_standard(tool) for tool in tools]
-
-        return {"tools": tools}
-
     def _convert_generation_config(
         self, config: GenerateConfig, system: Optional[str] = None
     ) -> Dict[str, Any]:
-        connectors = None
-        if self.is_online_model():
-            connectors = [CohereWebSearchConnector(id="web-search")]
-
         return {
-            "model": self.model.replace("-online", ""),
+            "model": self.model,
             "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
             "stop_sequences": config.stop_sequences or self.config.stop_sequences,
             "temperature": config.temperature or self.config.temperature,
@@ -338,5 +155,4 @@ class CohereModel(HttpServiceModel):
             "k": config.top_k or self.config.top_k,
             "frequency_penalty": config.frequency_penalty,
             "presence_penalty": config.presence_penalty,
-            "connectors": connectors,
         }
