@@ -1,19 +1,23 @@
 import json
-from typing import Any, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, confloat, model_validator
+from pydantic import BaseModel, Field, confloat, conlist, model_validator, validate_call
 
 from .base import (
     FunctionObject,
+    GenerateConfig,
     GenerationResult,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
     Tool,
+    ToolChoice,
 )
 from .openai import (
+    OpenAIAssistantMessage,
     OpenAICompatibleModel,
     OpenAIRequestBody,
     OpenAIResponseBody,
+    OpenAIResponseChoice,
 )
 
 
@@ -50,8 +54,8 @@ class MiniMaxFunctionObject(BaseModel):
 
 
 class MiniMaxTool(BaseModel):
-    type: Literal["function"]
-    function: MiniMaxFunctionObject
+    type: Literal["function", "web_search"]
+    function: Optional[MiniMaxFunctionObject] = None
 
     @classmethod
     def from_standard(cls, tool: Tool):
@@ -77,22 +81,57 @@ class MiniMaxRequestBody(OpenAIRequestBody):
     tools: Optional[List[MiniMaxTool]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
 
-    @model_validator(mode="before")
-    @classmethod
-    def check_tool_choice(cls, values):
-        tool_choice = values.get("tool_choice")
-        if tool_choice and not isinstance(tool_choice, str):
-            values["tool_choice"] = None
-
-        return values
+    ## MiniMax-specific parameters
+    mask_sensitive_info: Optional[bool] = None
 
 
 class MiniMaxResponseUsage(BaseModel):
     total_tokens: int
 
 
+class MiniMaxBaseResponse(BaseModel):
+    status_code: int
+    status_msg: str
+
+
+class MiniMaxResponseChoice(OpenAIResponseChoice):
+    finish_reason: str
+    index: int
+    message: Optional[OpenAIAssistantMessage] = None
+    messages: Optional[list] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_messages(cls, values):
+        if "message" not in values and "messages" not in values:
+            raise ValueError
+
+        if "messages" in values:
+            values["message"] = values["messages"][3]
+
+        return values
+
+
 class MiniMaxResponseBody(OpenAIResponseBody):
+    choices: conlist(MiniMaxResponseChoice, min_length=1)
     usage: Optional[MiniMaxResponseUsage] = None
+    input_sensitive: bool
+    input_sensitive_type: Optional[int] = Field(
+        None,
+        description=(
+            "当input_sensitive为true时返回。取值为以下其一："
+            "1 严重违规；2 色情；3 广告；4 违禁；5 谩骂；6 暴恐；7 其他。"
+        ),
+    )
+    output_sensitive: bool
+    output_sensitive_type: Optional[int] = Field(
+        None,
+        description=(
+            "当output_sensitive为true时返回。取值为以下其一："
+            "1 严重违规；2 色情；3 广告；4 违禁；5 谩骂；6 暴恐；7 其他。"
+        ),
+    )
+    base_resp: MiniMaxBaseResponse
 
     def to_standard(self, model: str = None):
         return GenerationResult(
@@ -109,23 +148,54 @@ class MiniMaxModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.minimax.chat/v1/text/chatcompletion_v2",
         language_models=[
-            "abab6.5-chat",
+            "abab7-chat-preview",
+            "abab6.5t-chat",
             "abab6.5s-chat",
+            "abab6.5s-chat-online",
             "abab6.5g-chat",
-            "abab6-chat",
             "abab5.5-chat",
             "abab5.5s-chat",
         ],
         visual_language_models=[],
         tool_models=[
-            "abab6.5-chat",
             "abab6.5s-chat",
-            "abab6.5g-chat",
-            "abab6-chat",
             "abab5.5-chat",
-            "abab5.5s-chat",
+            "abab6.5s-chat-online",
         ],
+        online_models=["abab6.5s-chat-online"],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = MiniMaxRequestBody
     RESPONSE_BODY_CLS = MiniMaxResponseBody
+
+    @validate_call
+    def _convert_tools(
+        self, tools: Optional[List[Tool]] = None, tool_choice: Optional[ToolChoice] = None
+    ) -> Dict[str, Any]:
+        if tools:
+            tools = [MiniMaxTool.from_standard(tool) for tool in tools]
+
+        if self.is_online_model():
+            tools = tools or []
+            tools.append(MiniMaxTool(type="web_search"))
+
+        minimax_tool_choice = None
+        if tools:
+            minimax_tool_choice = None
+            if tools and tool_choice is not None:
+                minimax_tool_choice = tool_choice.mode
+                if minimax_tool_choice == "any":
+                    minimax_tool_choice = "auto"
+
+        return {"tools": tools, "tool_choice": minimax_tool_choice}
+
+    def _convert_generation_config(
+        self, config: GenerateConfig, system: Optional[str] = None
+    ) -> Dict[str, Any]:
+        return {
+            "model": self.model.replace("-online", ""),
+            "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
+            "stop": config.stop_sequences or self.config.stop_sequences,
+            "temperature": config.temperature or self.config.temperature,
+            "top_p": config.top_p or self.config.top_p,
+        }
