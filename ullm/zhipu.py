@@ -1,26 +1,68 @@
-from typing import Any, Dict, List, Literal, Optional
+import base64
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
     Field,
     confloat,
+    conlist,
     model_validator,
     validate_call,
 )
 
 from .base import (
+    ChatMessage,
     GenerateConfig,
+    ImagePart,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
+    TextPart,
     Tool,
     ToolChoice,
+    UserMessage,
 )
 from .openai import (
+    OpenAIAssistantMessage,
+    OpenAIChatMessage,
     OpenAICompatibleModel,
     OpenAIFunctionObject,
+    OpenAIImagePart,
+    OpenAIImageURL,
     OpenAIRequestBody,
     OpenAIResponseBody,
+    OpenAISystemMessage,
+    OpenAIToolMessage,
+    OpenAIUserMessage,
 )
+
+
+class ZhipuUserMessage(OpenAIUserMessage):
+    @classmethod
+    def from_standard(cls, user_message: UserMessage):
+        if all(isinstance(part, TextPart) for part in user_message.content):
+            content = "\n".join([part.text for part in user_message.content])
+            return cls(content=content)
+
+        parts = []
+        for part in user_message.content:
+            if isinstance(part, TextPart):
+                parts.append(part)
+            elif isinstance(part, ImagePart):
+                url = None
+                if part.data:
+                    url = base64.b64encode(part.data).decode("utf-8")
+                elif part.url:
+                    url = part.url
+
+                if url:
+                    parts.append(OpenAIImagePart(image_url=OpenAIImageURL(url=str(url))))
+
+        return cls(content=parts)
+
+
+ZhipuChatMessage = Union[
+    OpenAISystemMessage, ZhipuUserMessage, OpenAIToolMessage, OpenAIAssistantMessage
+]
 
 
 class ZhipuRetrievalTool(BaseModel):
@@ -31,6 +73,8 @@ class ZhipuRetrievalTool(BaseModel):
 class ZhipuWebSearchTool(BaseModel):
     enable: Optional[bool] = False
     search_query: Optional[str] = None
+    search_result: Optional[bool] = False
+    search_prompt: Optional[str] = None
 
 
 class ZhipuAITool(BaseModel):
@@ -64,6 +108,7 @@ class ZhipuAIRequestBody(OpenAIRequestBody):
     user: Optional[str] = Field(None, exclude=True)
 
     ## different parameters
+    messages: conlist(ZhipuChatMessage, min_length=1)
     temperature: Optional[confloat(gt=0.0, lt=1.0)] = None
     top_p: Optional[confloat(gt=0.0, lt=1.0)] = None
     stop: Optional[List[str]]
@@ -87,26 +132,64 @@ class ZhipuAIModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://open.bigmodel.cn/api/paas/v4/chat/completions",
         language_models=[
-            "glm-3-turbo",
-            "glm-3-turbo-online",
+            "glm-4-plus",
+            "glm-4-plus-online",
+            "glm-4-0520",
+            "glm-4-0520-online",
             "glm-4",
             "glm-4-online",
+            "glm-4-air",
+            "glm-4-airx",
+            "glm-4-air-online",
+            "glm-4-airx-online",
+            "glm-4-long",
+            "glm-4-long-online",
+            "glm-4-flash",
+            "glm-4-flashx",
+            "glm-4-flash-online",
+            "glm-4-flashx-online",
         ],
-        visual_language_models=["glm-4v"],
+        visual_language_models=["glm-4v", "glm-4v-plus"],
         tool_models=[
-            "glm-3-turbo",
-            "glm-3-turbo-online",
+            "glm-4-plus",
+            "glm-4-plus-online",
+            "glm-4-0520",
+            "glm-4-0520-online",
             "glm-4",
             "glm-4-online",
+            "glm-4-air",
+            "glm-4-airx",
+            "glm-4-air-online",
+            "glm-4-airx-online",
+            "glm-4-long",
+            "glm-4-long-online",
+            "glm-4-flash",
+            "glm-4-flashx",
+            "glm-4-flash-online",
+            "glm-4-flashx-online",
         ],
         online_models=[
-            "glm-3-turbo-online",
+            "glm-4-plus-online",
+            "glm-4-0520-online",
             "glm-4-online",
+            "glm-4-air-online",
+            "glm-4-airx-online",
+            "glm-4-long-online",
+            "glm-4-flash-online",
+            "glm-4-flashx-online",
         ],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = ZhipuAIRequestBody
     RESPONSE_BODY_CLS = ZhipuAIResponseBody
+
+    @classmethod
+    @validate_call
+    def _convert_message(cls, message: ChatMessage) -> OpenAIChatMessage:
+        if isinstance(message, UserMessage):
+            return ZhipuUserMessage.from_standard(message)
+        else:
+            return super()._convert_message(message)
 
     @validate_call
     def _convert_tools(
@@ -117,7 +200,12 @@ class ZhipuAIModel(OpenAICompatibleModel):
 
         if self.is_online_model():
             tools = tools or []
-            tools.append(ZhipuAITool(type="web_search", web_search=ZhipuWebSearchTool(enable=True)))
+            tools.append(
+                ZhipuAITool(
+                    type="web_search",
+                    web_search=ZhipuWebSearchTool(enable=True, search_result=True),
+                )
+            )
         else:
             tools = tools or []
             tools.append(
