@@ -194,7 +194,7 @@ class OpenAIRequestBody(BaseModel):
 
 
 class OpenAIResponseChoice(BaseModel):
-    finish_reason: Literal["stop", "length", "content_filter", "tool_calls"]
+    finish_reason: Literal["stop", "length", "content_filter", "tool_calls", "eos", "function_call"]
     index: int
     message: OpenAIAssistantMessage
 
@@ -305,39 +305,42 @@ class OpenAICompatibleModel(HttpServiceModel):
 
 @RemoteLanguageModel.register("openai")
 class OpenAIModel(OpenAICompatibleModel):
-    # reference: https://platform.openai.com/docs/models/overview
+    # reference: https://platform.openai.com/docs/models
+    # TODO: gpt-4o-audio-preview/gpt-4o-audio-preview-2024-10-01
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.openai.com/v1/chat/completions",
         language_models=[
             "gpt-3.5-turbo",
             "gpt-3.5-turbo-0125",
-            "gpt-3.5-turbo-0613",  # Will be deprecated on June 13, 2024.
             "gpt-3.5-turbo-1106",
-            "gpt-3.5-turbo-16k",  # Currently points to gpt-3.5-turbo-16k-0613.
-            "gpt-3.5-turbo-16k-0613",  # Will be deprecated on June 13, 2024.
             "gpt-3.5-turbo-instruct",
             "gpt-4",
-            "gpt-4-0125-preview",
             "gpt-4-0613",
-            "gpt-4-1106-preview",
-            "gpt-4-32k",
-            "gpt-4-32k-0613",
-            "gpt-4-turbo",
-            "gpt-4-turbo-2024-04-09",
+            "gpt-4-0125-preview",
             "gpt-4-turbo-preview",
+            "gpt-4-1106-preview",
+            "o1-preview",
+            "o1-preview-2024-09-12",
+            "o1-mini",
+            "o1-mini-2024-09-12",
+            # TODO
+            # "gpt-4o-realtime-preview",
+            # "gpt-4o-realtime-preview-2024-10-01",
         ],
         visual_language_models=[
-            "gpt-4-vision-preview",
-            "gpt-4-1106-vision-preview",
             "gpt-4-turbo",
             "gpt-4-turbo-2024-04-09",
             "gpt-4o",
+            "gpt-4o-2024-08-06",
+            "gpt-4o-2024-05-13",
+            "chatgpt-4o-latest",
+            "gpt-4o-mini-2024-07-18",
+            "gpt-4o-mini",
         ],
         # https://platform.openai.com/docs/guides/function-calling
         tool_models=[
             "gpt-3.5-turbo",
             "gpt-3.5-turbo-0125",
-            "gpt-3.5-turbo-0613",
             "gpt-3.5-turbo-1106",
             "gpt-4",
             "gpt-4-0125-preview",
@@ -347,6 +350,12 @@ class OpenAIModel(OpenAICompatibleModel):
             "gpt-4-turbo-2024-04-09",
             "gpt-4-turbo-preview",
             "gpt-4o",
+            "gpt-4o-2024-05-13",
+        ],
+        online_models=[
+            # TODO
+            # "gpt-4o-realtime-preview",
+            # "gpt-4o-realtime-preview-2024-10-01",
         ],
         required_config_fields=["api_key"],
     )
