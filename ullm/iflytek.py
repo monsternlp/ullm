@@ -1,324 +1,188 @@
-import base64
-import hashlib
-import hmac
-import json
-from contextlib import closing
-from typing import List, Literal, Optional
-from urllib.parse import urlencode, urlparse, urlunparse
+from typing import Any, Dict, List, Literal, Optional
 
-import arrow
-import websocket
 from pydantic import (
     BaseModel,
-    NonNegativeInt,
-    confloat,
-    conint,
-    conlist,
+    Field,
+    model_validator,
     validate_call,
 )
 
 from .base import (
-    AssistantMessage,
-    ChatMessage,
-    FunctionCall,
     GenerateConfig,
     GenerationResult,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    TextPart,
+    Tool,
     ToolCall,
-    ToolMessage,
-    UserMessage,
+    ToolChoice,
 )
-from .openai import OpenAIFunctionObject
+from .openai import (
+    OpenAIAssistantMessage,
+    OpenAICompatibleModel,
+    OpenAIFunctionObject,
+    OpenAIRequestBody,
+    OpenAIResponseUsage,
+    OpenAIToolChoice,
+)
 
 
-class IflyTekHeader(BaseModel):
-    app_id: str
-    uid: Optional[str] = None
+class IflyTekWebSearch(BaseModel):
+    enable: Optional[bool] = None
 
 
-class IflyTekChatParameters(BaseModel):
-    domain: Literal["general", "generalv2", "generalv3", "generalv3.5"]
-    temperature: Optional[confloat(gt=0.0, le=1.0)] = None
-    max_tokens: Optional[int] = None
-    top_k: Optional[conint(ge=1, le=6)] = None
-    chat_id: Optional[str] = None
-
-
-class IflyTekParameters(BaseModel):
-    chat: IflyTekChatParameters
-
-
-class IflyTekChatMessage(BaseModel):
-    role: Literal["system", "user", "assistant"]
-    content: str
-    function_call: Optional[FunctionCall] = None
+class IflyTekTool(BaseModel):
+    type: Literal["function", "web_search"]
+    function: Optional[OpenAIFunctionObject] = None
+    web_search: Optional[IflyTekWebSearch] = None
 
     @classmethod
-    def from_standard(cls, message: ChatMessage):
-        role, content, function_call = message.role, "", None
-        if isinstance(message, UserMessage):
-            for part in message.content:
-                if isinstance(part, TextPart):
-                    content += part.text + "\n"
-                else:
-                    pass
-        elif isinstance(message, AssistantMessage):
-            content = message.content
-            if message.tool_calls:  # NOTE: API 文档中未定义相关行为
-                content = ""
-                for tool_call in message.tool_calls:
-                    content += (
-                        f"You should call the function `{tool_call.function.name}` with arguments: "
-                        f"{tool_call.function.arguments}\n"
-                    )
-
-                if len(message.tool_calls) == 1:
-                    function_call = message.tool_calls[0].function
-
-        elif isinstance(message, ToolMessage):
-            # NOTE: API 文档中未定义相关行为
-            role = "user"
-            content = (
-                f"I called the function `{message.tool_name}` and "
-                f"the response of that function is: {message.tool_result}"
-            )
-
-        return cls(role=role, content=content.strip(), function_call=function_call)
+    def from_standard(cls, tool: Tool):
+        return cls(type=tool.type, function=OpenAIFunctionObject.from_standard(tool.function))
 
 
-class IflyTekPayloadMessage(BaseModel):
-    text: List[IflyTekChatMessage]
+class IflyTekRequestBody(OpenAIRequestBody):
+    # Reference: https://www.xfyun.cn/doc/spark//HTTP调用文档.html
+    ## exclude fields
+    frequency_penalty: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(None, exclude=True)
+    logprobs: Optional[Any] = Field(None, exclude=True)
+    top_logprobs: Optional[Any] = Field(None, exclude=True)
+    n: Optional[Any] = Field(None, exclude=True)
+    presence_penalty: Optional[Any] = Field(None, exclude=True)
+    response_format: Optional[Any] = Field(None, exclude=True)
+    seed: Optional[Any] = Field(None, exclude=True)
+    stop: Optional[Any] = Field(None, exclude=True)
+    top_p: Optional[Any] = Field(None, exclude=True)
+    user: Optional[Any] = Field(None, exclude=True)
+
+    ## different parameters
+    tools: Optional[List[IflyTekTool]] = None
+
+    ## IflyTek-specific parameters
+    top_k: Optional[int] = None
 
 
-class IflyTekPayloadFunctions(BaseModel):
-    text: List[OpenAIFunctionObject]
+class IflyTekAssistantMessage(OpenAIAssistantMessage):
+    @model_validator(mode="before")
+    def check_tool_calls(cls, values):
+        if values.get("tool_calls") and not isinstance(values["tool_calls"], list):
+            values["tool_calls"] = [values["tool_calls"]]
+
+        return values
 
 
-class IflyTekPayload(BaseModel):
-    message: IflyTekPayloadMessage
-    functions: Optional[IflyTekPayloadFunctions] = None
+class IflyTekResponseChoice(BaseModel):
+    index: int
+    message: IflyTekAssistantMessage
 
 
-class IflyTekRequestBody(BaseModel):
+class IflyTekResponseBody(BaseModel):
     # https://www.xfyun.cn/doc/spark/Web.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E
-    header: IflyTekHeader
-    parameter: IflyTekParameters
-    payload: IflyTekPayload
-
-
-class IflyTekResponseHeader(BaseModel):
     code: int
     message: str
     sid: str
-    status: conint(ge=0, le=2)
-
-
-class IflyTekResponsePayloadChoices(BaseModel):
-    status: conint(ge=0, le=2)
-    seq: NonNegativeInt
-    text: List[IflyTekChatMessage]
-
-
-class _IflyTekResponsePayloadUsage(BaseModel):
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
-
-
-class IflyTekResponsePayloadUsage(BaseModel):
-    text: _IflyTekResponsePayloadUsage
-
-
-class IflyTekResponsePayload(BaseModel):
-    choices: IflyTekResponsePayloadChoices
-    usage: Optional[IflyTekResponsePayloadUsage] = None
-
-
-class IflyTekResponse(BaseModel):
-    # https://www.xfyun.cn/doc/spark/Web.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E
-    header: IflyTekResponseHeader
-    payload: Optional[IflyTekResponsePayload] = None
+    choices: List[IflyTekResponseChoice]
+    usage: Optional[OpenAIResponseUsage] = None
 
     def to_standard(self, model: str):
-        message = self.payload.choices.text[0]
+        message = self.choices[0].message
         tool_calls = None
-        if message.function_call:
-            tool_calls = [ToolCall(function=message.function_call)]
+        if message.tool_calls:
+            tool_calls = []
+            for tool_call in message.tool_calls:
+                tool_calls.append(ToolCall.model_validate(tool_call.model_dump()))
 
         return GenerationResult(
             model=model,
             stop_reason="stop",
             content=message.content,
             tool_calls=tool_calls,
-            input_tokens=self.payload.usage.text.prompt_tokens,
-            output_tokens=self.payload.usage.text.completion_tokens,
-            total_tokens=self.payload.usage.text.total_tokens,
+            input_tokens=self.usage.prompt_tokens,
+            output_tokens=self.usage.completion_tokens,
+            total_tokens=self.usage.total_tokens,
         )
 
 
 @RemoteLanguageModel.register("iflytek")
-class IflyTekModel(RemoteLanguageModel):
-    # Reference: https://www.xfyun.cn/doc/spark/Web.html#_1-%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E
-    # TODO: 据说会升级 API 为 OpenAI 的格式: https://github.com/iflytek/spark-ai-python/issues/17
+class IflyTekModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
-        model_api_url_mappings={
-            "SparkDesk-v3.5": "wss://spark-api.xf-yun.com/v3.5/chat",
-            "SparkDesk-v3.1": "wss://spark-api.xf-yun.com/v3.1/chat",
-            "SparkDesk-v2": "wss://spark-api.xf-yun.com/v2.1/chat",
-            "SparkDesk-v1": "wss://spark-api.xf-yun.com/v1.1/chat",
-        },
-        language_models=["SparkDesk-v3.5", "SparkDesk-v3.1", "SparkDesk-v2", "SparkDesk-v1"],
-        # https://www.xfyun.cn/doc/spark/Web.html#_2-function-call%E8%AF%B4%E6%98%8E
-        tool_models=["SparkDesk-v3.1", "SparkDesk-v3.5"],
-        required_config_fields=["app_id", "api_key", "secret_key"],
+        api_url="https://spark-api-open.xf-yun.com/v1/chat/completions",
+        language_models=[
+            "SparkDesk-4.0-Ultra",
+            "SparkDesk-Max-32K",
+            "SparkDesk-Max",
+            "SparkDesk-Pro-128K",
+            "SparkDesk-Pro",
+            "SparkDesk-Lite",
+            "SparkDesk-4.0-Ultra-online",
+            "SparkDesk-Max-32K-online",
+            "SparkDesk-Max-online",
+            "SparkDesk-Pro-128K-online",
+            "SparkDesk-Pro-online",
+            "SparkDesk-Lite-online",
+        ],
+        visual_language_models=[],
+        tool_models=[
+            "SparkDesk-4.0-Ultra",
+            "SparkDesk-Max-32K",
+            "SparkDesk-Max",
+            "SparkDesk-Pro-128K",
+            "SparkDesk-Pro",
+        ],
+        online_models=[
+            "SparkDesk-4.0-Ultra-online",
+            "SparkDesk-Max-32K-online",
+            "SparkDesk-Max-online",
+            "SparkDesk-Pro-128K-online",
+            "SparkDesk-Pro-online",
+            "SparkDesk-Lite-online",
+        ],
+        required_config_fields=["api_key"],
     )
-    MODEL_TO_DOMAIN = {
-        "SparkDesk-v3.5": "generalv3.5",
-        "SparkDesk-v3.1": "generalv3",
-        "SparkDesk-v2": "generalv2",
-        "SparkDesk-v1": "generalv1",
+    _MODEL_MAPPINGS = {
+        "SparkDesk-4.0-Ultra": "4.0Ultra",
+        "SparkDesk-Max-32K": "max-32k",
+        "SparkDesk-Max": "generalv3.5",
+        "SparkDesk-Pro-128K": "pro-128k",
+        "SparkDesk-Pro": "generalv3",
+        "SparkDesk-Lite": "general",
     }
-
-    def _get_api_url(self):
-        # generate timestamp by RFC1123
-        timestamp = arrow.utcnow().format(arrow.FORMAT_RFC1123)
-
-        # urlparse
-        api_url = str(self.META.model_api_url_mappings[self.model])
-        parsed_url = urlparse(api_url)
-        host = parsed_url.netloc
-        path = parsed_url.path
-
-        signature_origin = f"host: {host}\ndate: {timestamp}\nGET {path} HTTP/1.1"
-
-        # encrypt using hmac-sha256
-        signature_sha = hmac.new(
-            self.config.secret_key.get_secret_value().encode("utf-8"),
-            signature_origin.encode("utf-8"),
-            digestmod=hashlib.sha256,
-        ).digest()
-
-        signature_sha_base64 = base64.b64encode(signature_sha).decode(encoding="utf-8")
-        authorization_origin = (
-            f'api_key="{self.config.api_key.get_secret_value()}", '
-            f'algorithm="hmac-sha256", '
-            f'headers="host date request-line", '
-            f'signature="{signature_sha_base64}"'
-        )
-        authorization = base64.b64encode(authorization_origin.encode("utf-8")).decode(
-            encoding="utf-8"
-        )
-
-        # generate url
-        params_dict = {"authorization": authorization, "date": timestamp, "host": host}
-        encoded_params = urlencode(params_dict)
-        url = urlunparse(
-            (
-                parsed_url.scheme,
-                parsed_url.netloc,
-                parsed_url.path,
-                parsed_url.params,
-                encoded_params,
-                parsed_url.fragment,
-            )
-        )
-        return url
+    REQUEST_BODY_CLS = IflyTekRequestBody
+    RESPONSE_BODY_CLS = IflyTekResponseBody
 
     @validate_call
-    def chat(
-        self,
-        messages: conlist(ChatMessage, min_length=1),
-        config: Optional[GenerateConfig] = None,
-        system: Optional[str] = None,
-    ) -> GenerationResult:
-        self._validate_model(messages)
-        api_url = self._get_api_url()
+    def _convert_tools(
+        self, tools: Optional[List[Tool]] = None, tool_choice: Optional[ToolChoice] = None
+    ) -> Dict[str, Any]:
+        if tools:
+            tools = [IflyTekTool.from_standard(tool) for tool in tools]
 
-        messages = [IflyTekChatMessage.from_standard(message) for message in messages]
-        if system:
-            messages = [IflyTekChatMessage(role="system", content=system)] + messages
+        if self.is_online_model():
+            tools = tools or []
+            tools.append({"type": "web_search", "web_search": {"enable": True}})
+        else:
+            tools = tools or []
+            tools.append({"type": "web_search", "web_search": {"enable": False}})
 
-        config = config or GenerateConfig()
-        data = IflyTekRequestBody.model_validate(
-            {
-                "header": {"app_id": self.config.app_id},
-                "parameter": {
-                    "chat": {
-                        "domain": self.MODEL_TO_DOMAIN[self.model],
-                        "temperature": config.temperature or self.config.temperature,
-                        "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
-                        "top_k": config.top_k or self.config.top_k,
-                    }
-                },
-                "payload": {"message": {"text": messages}},
-            }
-        )
-        if self.is_tool_model() and config.tools:
-            data.payload.functions = IflyTekPayloadFunctions(
-                text=[OpenAIFunctionObject.from_standard(tool.function) for tool in config.tools]
-            )
-
-        result, original_responses = None, []
-        with closing(websocket.create_connection(api_url)) as conn:
-            conn.send(json.dumps(data.model_dump(exclude_none=True)))
-            status, code = -1, 0
-            while status != 2 and code == 0:
-                message = conn.recv()
-                data = json.loads(message)
-                original_responses.append(data)
-                try:
-                    data = IflyTekResponse.model_validate(data)
-                    code = data.header.code
-                    if code != 0:
-                        result = GenerationResult(
-                            model=self.model,
-                            stop_reason="error",
-                            content=f"Error {code}: {data.header.message}",
-                        )
-                        break
-
-                    status = data.header.status
-                except Exception:
-                    result = GenerationResult(
-                        model=self.model, stop_reason="error", content=f"Bad response data: {data}"
+        openai_tool_choice = None
+        if tools and tool_choice is not None:
+            openai_tool_choice = tool_choice.mode
+            if openai_tool_choice == "any":
+                if len(tool_choice.functions) == 1:
+                    openai_tool_choice = OpenAIToolChoice(
+                        type="function", function={"name": tool_choice.functions[0]}
                     )
-                    break
+                else:
+                    raise ValueError("OpenAI does not supported multi functions in `tool_choice`")
 
-        if not result:
-            original_responses = sorted(
-                original_responses, key=lambda x: x["payload"]["choices"]["seq"]
-            )
-            message, function_call = IflyTekChatMessage(role="assistant", content=""), None
-            for response in original_responses:
-                message.content += response["payload"]["choices"]["text"][0]["content"] or ""
-                if response["payload"]["choices"]["text"][0].get("function_call"):
-                    function_call = response["payload"]["choices"]["text"][0]["function_call"]
+        return {"tools": tools, "tool_choice": openai_tool_choice}
 
-            message.function_call = function_call
-            final_response = IflyTekResponse(
-                header=original_responses[-1]["header"],
-                payload={
-                    "choices": {
-                        "status": original_responses[-1]["payload"]["choices"]["status"],
-                        "seq": original_responses[-1]["payload"]["choices"]["seq"],
-                        "text": [message],
-                    },
-                    "usage": original_responses[-1]["payload"]["usage"],
-                },
-            )
-            result = GenerationResult(
-                model=self.model,
-                stop_reason="stop",
-                content=final_response.payload.choices.text[0].content,
-                tool_calls=None
-                if not message.function_call
-                else [ToolCall(function=message.function_call)],
-                input_tokens=final_response.payload.usage.text.prompt_tokens,
-                output_tokens=final_response.payload.usage.text.completion_tokens,
-                total_tokens=final_response.payload.usage.text.total_tokens,
-            )
-
-        result.original_result = json.dumps(original_responses, ensure_ascii=False)
-        return result
+    def _convert_generation_config(
+        self, config: GenerateConfig, system: Optional[str] = None
+    ) -> Dict[str, Any]:
+        return {
+            "model": self._MODEL_MAPPINGS[self.model.replace("-online", "")],
+            "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
+            "temperature": config.temperature or self.config.temperature,
+            "top_k": config.top_k or self.config.top_k,
+        }
