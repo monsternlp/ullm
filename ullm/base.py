@@ -156,10 +156,10 @@ class ToolChoice(BaseModel):
 
 
 class GenerateConfig(BaseModel):
-    temperature: Optional[NonNegativeFloat] = 0.7
-    max_tokens: Optional[PositiveInt] = 4096
+    temperature: Optional[NonNegativeFloat] = None
+    max_tokens: Optional[PositiveInt] = None
     max_input_tokens: Optional[PositiveInt] = None
-    max_output_tokens: Optional[PositiveInt] = 1024
+    max_output_tokens: Optional[PositiveInt] = None
     top_p: Optional[NonNegativeFloat] = None
     top_k: Optional[NonNegativeInt] = None
     stop_sequences: Optional[List[str]] = None

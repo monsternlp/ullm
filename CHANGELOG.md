@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.5.1
+
+Fixed
+
+- Fixed `GenerateConfig`: remove all default values, this fix ensures that only parameters explicitly set by the user are passed to the API
+
 ## v0.5.0
 
 Changed
