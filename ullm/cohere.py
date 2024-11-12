@@ -67,11 +67,6 @@ class CohereDocument(BaseModel, extra="allow"):
     id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
 
 
-class CohereToolParameterDefinition(BaseModel):
-    type: str
-    description: Optional[str] = None
-    required: Optional[bool] = None
-
 
 class CohereTool(BaseModel):
     name: str

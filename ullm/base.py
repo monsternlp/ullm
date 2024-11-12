@@ -90,10 +90,35 @@ class ToolCall(BaseModel):
         return self
 
 
+class CitationSource(BaseModel):
+    id: Optional[str] = None
+    type: Literal["tool", "document"]
+    tool_output: Optional[dict] = None
+    document: Optional[dict] = None
+
+    @model_validator(mode="before")
+    def check_type(cls, values):
+        if values["type"] == "tool":
+            assert values.get("tool_output")
+
+        if values["type"] == "document":
+            assert values.get("document")
+
+        return values
+
+
+class Citation(BaseModel):
+    start: Optional[int] = None
+    end: Optional[int] = None
+    text: Optional[str] = None
+    sources: Optional[List[CitationSource]] = None
+
+
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
     content: Optional[str] = ""
     tool_calls: Optional[List[ToolCall]] = None
+    citations: Optional[List[Citation]] = None
 
     @model_validator(mode="after")
     def check_content_or_tool_calls(self):
@@ -180,6 +205,7 @@ class GenerationResult(BaseModel):
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     original_result: Json[Any] = None
+    citations: Optional[List[Citation]] = None
 
     @model_validator(mode="after")
     def check_content_or_tool_calls(self):
@@ -187,7 +213,9 @@ class GenerationResult(BaseModel):
         return self
 
     def to_message(self) -> AssistantMessage:
-        return AssistantMessage(content=self.content, tool_calls=self.tool_calls)
+        return AssistantMessage(
+            content=self.content, tool_calls=self.tool_calls, citations=self.citations
+        )
 
 
 class LanguageModel(ABC):
