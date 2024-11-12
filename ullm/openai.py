@@ -92,6 +92,16 @@ class OpenAIToolCall(ToolCall):
             },
         )
 
+    def to_standard(self):
+        return ToolCall(
+            id=self.id,
+            type=self.type,
+            function={
+                "name": self.function.name,
+                "arguments": json.loads(self.function.arguments),
+            },
+        )
+
 
 class OpenAIAssistantMessage(AssistantMessage):
     tool_calls: Optional[List[OpenAIToolCall]] = None
@@ -219,7 +229,7 @@ class OpenAIResponseBody(BaseModel):
         if self.choices[0].message.tool_calls:
             tool_calls = []
             for tool_call in self.choices[0].message.tool_calls:
-                tool_calls.append(ToolCall.model_validate(tool_call.model_dump()))
+                tool_calls.append(tool_call.to_standard())
 
         return GenerationResult(
             model=model or self.model,
