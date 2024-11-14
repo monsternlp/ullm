@@ -79,7 +79,7 @@ class FunctionCall(BaseModel):
 
 class ToolCall(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
-    type: Literal["function"] = "function"
+    type: str
     function: Optional[FunctionCall] = None
 
     @model_validator(mode="after")
