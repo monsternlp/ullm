@@ -318,6 +318,12 @@ class RemoteLanguageModelConfig(ModelConfig):
         examples=["2024-02-01"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
+    bytedance_endpoint: Optional[str] = Field(
+        "",
+        description="用于字节豆包模型",
+        examples=["ep-20240101000000-abc123"],
+        json_schema_extra={"providers": ["bytedance"]},
+    )
     app_id: Optional[str] = Field(
         "",
         description="讯飞星火需要",

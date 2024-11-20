@@ -11,6 +11,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .bytedance import ByteDanceModel
 from .cloudflare import CloudflareModel
 from .cohere import CohereModel
 from .deepseek import DeepSeekModel
@@ -37,6 +38,7 @@ __all__ = [
     AzureOpenAIModel,
     BaichuanModel,
     BaiduModel,
+    ByteDanceModel,
     CloudflareModel,
     CohereModel,
     DeepSeekModel,
