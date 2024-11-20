@@ -27,6 +27,7 @@ from .openrouter import OpenRouterModel
 from .perplexity import PerplexityModel
 from .skywork import SkyWorkModel
 from .stepfun import StepFunModel
+from .tencent import TencentModel
 from .together import TogetherAIModel
 from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
@@ -59,6 +60,7 @@ __all__ = [
     RemoteLanguageModel,
     SkyWorkModel,
     StepFunModel,
+    TencentModel,
     TogetherAIModel,
     ToolMessage,
     UserMessage,

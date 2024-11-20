@@ -296,7 +296,7 @@ class RemoteLanguageModelConfig(ModelConfig):
     )
     secret_key: Optional[SecretStr] = Field(
         "",
-        description="讯飞星火 api_secret, 文心一言 secret key",
+        description="讯飞星火 api_secret, 文心一言 secret key，腾讯混元 secret_key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
         json_schema_extra={"providers": ["iflytek", "baidu"]},
     )
@@ -323,6 +323,12 @@ class RemoteLanguageModelConfig(ModelConfig):
         description="用于字节豆包模型",
         examples=["ep-20240101000000-abc123"],
         json_schema_extra={"providers": ["bytedance"]},
+    )
+    region: Optional[str] = Field(
+        "",
+        description="用于腾讯混元等需要指定地区的服务",
+        examples=["ap-beijing"],
+        json_schema_extra={"providers": ["tencent"]},
     )
     app_id: Optional[str] = Field(
         "",
@@ -598,7 +604,9 @@ class HttpServiceModel(RemoteLanguageModel):
             pass
 
         always_merger.merge(body, self._convert_generation_config(config, system=system))
-        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(exclude_none=True)
+        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(
+            exclude_none=True, by_alias=True
+        )
 
     @validate_call
     def chat(
