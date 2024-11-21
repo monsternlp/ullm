@@ -79,7 +79,7 @@ class FunctionCall(BaseModel):
 
 class ToolCall(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
-    type: Literal["function"] = "function"
+    type: str
     function: Optional[FunctionCall] = None
 
     @model_validator(mode="after")
@@ -90,10 +90,35 @@ class ToolCall(BaseModel):
         return self
 
 
+class CitationSource(BaseModel):
+    id: Optional[str] = None
+    type: Literal["tool", "document"]
+    tool_output: Optional[dict] = None
+    document: Optional[dict] = None
+
+    @model_validator(mode="before")
+    def check_type(cls, values):
+        if values["type"] == "tool":
+            assert values.get("tool_output")
+
+        if values["type"] == "document":
+            assert values.get("document")
+
+        return values
+
+
+class Citation(BaseModel):
+    start: Optional[int] = None
+    end: Optional[int] = None
+    text: Optional[str] = None
+    sources: Optional[List[CitationSource]] = None
+
+
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
     content: Optional[str] = ""
     tool_calls: Optional[List[ToolCall]] = None
+    citations: Optional[List[Citation]] = None
 
     @model_validator(mode="after")
     def check_content_or_tool_calls(self):
@@ -180,6 +205,7 @@ class GenerationResult(BaseModel):
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     original_result: Json[Any] = None
+    citations: Optional[List[Citation]] = None
 
     @model_validator(mode="after")
     def check_content_or_tool_calls(self):
@@ -187,7 +213,9 @@ class GenerationResult(BaseModel):
         return self
 
     def to_message(self) -> AssistantMessage:
-        return AssistantMessage(content=self.content, tool_calls=self.tool_calls)
+        return AssistantMessage(
+            content=self.content, tool_calls=self.tool_calls, citations=self.citations
+        )
 
 
 class LanguageModel(ABC):
@@ -268,7 +296,7 @@ class RemoteLanguageModelConfig(ModelConfig):
     )
     secret_key: Optional[SecretStr] = Field(
         "",
-        description="讯飞星火 api_secret, 文心一言 secret key",
+        description="讯飞星火 api_secret, 文心一言 secret key，腾讯混元 secret_key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
         json_schema_extra={"providers": ["iflytek", "baidu"]},
     )
@@ -289,6 +317,18 @@ class RemoteLanguageModelConfig(ModelConfig):
         description="用于 Azure OpenAI",
         examples=["2024-02-01"],
         json_schema_extra={"providers": ["azure-openai"]},
+    )
+    bytedance_endpoint: Optional[str] = Field(
+        "",
+        description="用于字节豆包模型",
+        examples=["ep-20240101000000-abc123"],
+        json_schema_extra={"providers": ["bytedance"]},
+    )
+    region: Optional[str] = Field(
+        "",
+        description="用于腾讯混元等需要指定地区的服务",
+        examples=["ap-beijing"],
+        json_schema_extra={"providers": ["tencent"]},
     )
     app_id: Optional[str] = Field(
         "",
@@ -564,7 +604,9 @@ class HttpServiceModel(RemoteLanguageModel):
             pass
 
         always_merger.merge(body, self._convert_generation_config(config, system=system))
-        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(exclude_none=True)
+        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(
+            exclude_none=True, by_alias=True
+        )
 
     @validate_call
     def chat(

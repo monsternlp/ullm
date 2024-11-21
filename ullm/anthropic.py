@@ -146,6 +146,12 @@ class AnthropicTool(BaseModel):
         )
 
 
+class AnthropicToolChoice(BaseModel):
+    type: Literal["auto", "any", "tool"]
+    disable_parallel_tool_use: Optional[bool] = None
+    name: Optional[str] = None
+
+
 class AnthropicRequestMeta(BaseModel):
     user_id: str
 
@@ -159,6 +165,7 @@ class AnthropicRequestBody(BaseModel):
     stream: Optional[bool] = None
     system: Optional[str] = None
     temperature: Optional[confloat(ge=0.0, le=1.0)] = None
+    tool_choice: Optional[AnthropicToolChoice] = None
     tools: Optional[List[AnthropicTool]] = None
     top_k: Optional[PositiveInt] = None
     top_p: Optional[confloat(ge=0.0, le=1.0)] = None
@@ -214,13 +221,23 @@ class AnthropicModel(HttpServiceModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.anthropic.com/v1/messages",
         visual_language_models=[
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-haiku-20241022",
+            "claude-3-5-haiku-latest",
             "claude-3-haiku-20240307",
             "claude-3-opus-20240229",
+            "claude-3-opus-latest",
             "claude-3-sonnet-20240229",
         ],
         tool_models=[
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-haiku-20241022",
+            "claude-3-5-haiku-latest",
             "claude-3-haiku-20240307",
             "claude-3-opus-20240229",
+            "claude-3-opus-latest",
             "claude-3-sonnet-20240229",
         ],
         required_config_fields=["api_key"],
@@ -229,13 +246,11 @@ class AnthropicModel(HttpServiceModel):
     RESPONSE_BODY_CLS = AnthropicResponseBody
     # reference: https://docs.anthropic.com/claude/reference/versions
     _ANTHROPIC_VERSION = "2023-06-01"
-    _ANTHROPIC_BETA = "tools-2024-04-04"
 
     def _make_api_headers(self):
         return {
             "x-api-key": self.config.api_key.get_secret_value(),
             "anthropic-version": self._ANTHROPIC_VERSION,
-            "anthropic-beta": self._ANTHROPIC_BETA,
         }
 
     @classmethod
@@ -262,7 +277,18 @@ class AnthropicModel(HttpServiceModel):
         if tools:
             tools = [AnthropicTool.from_standard(tool) for tool in tools]
 
-        return {"tools": tools}
+        anthropic_tool_choice = None
+        if tools and tool_choice is not None and tool_choice != "none":
+            anthropic_tool_choice = {"type": tool_choice}
+            if anthropic_tool_choice == "any":
+                if len(tool_choice.functions) == 1:
+                    anthropic_tool_choice = {"type": "tool", "name": tool_choice.functions[0]}
+                else:
+                    raise ValueError(
+                        "Anthropic does not supported multi functions in `tool_choice`"
+                    )
+
+        return {"tools": tools, "tool_choice": anthropic_tool_choice}
 
     @validate_call
     def _convert_generation_config(

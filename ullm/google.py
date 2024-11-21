@@ -159,11 +159,26 @@ class GoogleFunctionDeclaration(BaseModel):
     parameters: Optional[JsonSchemaObject] = None
 
 
+class GoogleRetrievalConfig(BaseModel):
+    mode: Literal["MODE_UNSPECIFIED", "MODE_DYNAMIC"]
+    threshold: Optional[float] = Field(None, serialization_alias="dynamicThreshold")
+
+
+class GoogleSearchRetrieval(BaseModel):
+    retrieval_config: GoogleRetrievalConfig = Field(
+        ..., serialization_alias="dynamicRetrievalConfig"
+    )
+
+
 class GoogleTool(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/Tool
-    function_declarations: List[GoogleFunctionDeclaration] = Field(
-        ..., serialization_alias="functionDeclarations"
+    function_declarations: Optional[List[GoogleFunctionDeclaration]] = Field(
+        None, serialization_alias="functionDeclarations"
     )
+    google_search_retrieval: Optional[GoogleSearchRetrieval] = Field(
+        None, serialization_alias="googleSearchRetrieval"
+    )
+    code_execution: Optional[Any] = Field(None, serialization_alias="codeExecution")
 
     @classmethod
     def from_standard(cls, tools: List[Tool]) -> "GoogleTool":
@@ -278,15 +293,19 @@ class GoogleSafetyRating(BaseModel):
 
 
 class GoogleCandidate(BaseModel):
-    # https://ai.google.dev/api/rest/v1beta/Candidate
-    # generateContent 接口结果中无 citationMetadata 和 groundingAttributions
-    index: int
+    # https://ai.google.dev/api/generate-content#v1beta.Candidate
+    index: Optional[int] = None
+    avg_logprobs: Optional[float] = Field(None, alias="avgLogprobs")
+    logprobs_result: Optional[dict] = Field(None, alias="logprobsResult")
+    grouding_metadata: Optional[dict] = Field(None, alias="groudingMetadata")  # TODO
+    grouding_attributions: Optional[List[dict]] = Field(None, alias="groudingAttributions")  # TODO
+    citation_metadata: Optional[dict] = Field(None, alias="citationMetadata")  # TODO
     content: GoogleContent
     finish_reason: Literal["STOP", "MAX_TOKENS", "SAFETY", "RECITATION", "OTHER"] = Field(
         ..., alias="finishReason"
     )
-    safety_ratings: List[GoogleSafetyRating] = Field(
-        ...,
+    safety_ratings: Optional[List[GoogleSafetyRating]] = Field(
+        None,
         alias="safetyRatings",
         description="List of ratings for the safety of a response candidate.",
     )
@@ -302,10 +321,18 @@ class GooglePromptFeedback(BaseModel):
     )
 
 
+class GoogleUsageMetadata(BaseModel):
+    prompt_token_count: int = Field(..., alias="promptTokenCount")
+    cached_token_count: Optional[int] = Field(None, alias="cachedContentTokenCount")
+    candidates_token_count: int = Field(..., alias="candidatesTokenCount")
+    total_token_count: int = Field(..., alias="totalTokenCount")
+
+
 class GoogleGenerateContentResponseBody(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/GenerateContentResponse
     candidates: conlist(GoogleCandidate, min_length=1)
     prompt_feedback: Optional[GooglePromptFeedback] = Field(None, alias="promptFeedback")
+    usage_metadata: GoogleUsageMetadata = Field(..., alias="usageMetadata")
 
     @validate_call
     def to_standard(self, model: str) -> GenerationResult:
@@ -322,7 +349,9 @@ class GoogleGenerateContentResponseBody(BaseModel):
             model=model,
             stop_reason=candidate.finish_reason,
             content=candidate.content.parts[0].text,
-            output_tokens=candidate.token_count,
+            input_tokens=self.usage_metadata.prompt_token_count,
+            output_tokens=self.usage_metadata.candidates_token_count,
+            total_tokens=self.usage_metadata.total_token_count,
             tool_calls=tool_calls,
         )
 
@@ -335,22 +364,23 @@ GOOGLE_API_URL_TEMPLATE = (
 @RemoteLanguageModel.register("google")
 class GoogleModel(HttpServiceModel):
     # https://ai.google.dev/gemini-api/docs/models/gemini
-    _LANGUAGE_MODELS = [
-        "gemini-1.0-pro",
-        "gemini-1.0-pro-001",
-        "gemini-1.0-pro-latest",
-        "gemini-pro",
-    ]
+    _LANGUAGE_MODELS = []
     _VISUAL_LANGUAGE_MODELS = [
-        "gemini-1.0-pro-vision",
-        "gemini-1.0-pro-vision-latest",
-        "gemini-pro-vision",
         "gemini-1.5-flash",
         "gemini-1.5-flash-001",
+        "gemini-1.5-flash-002",
         "gemini-1.5-flash-latest",
+        "gemini-1.5-flash-exp-0827",
+        "gemini-1.5-flash-8b-exp-0827",
+        "gemini-1.5-flash-8b-exp-0924",
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-flash-8b-001",
+        "gemini-1.5-flash-8b-latest",
         "gemini-1.5-pro",
         "gemini-1.5-pro-001",
+        "gemini-1.5-pro-002",
         "gemini-1.5-pro-latest",
+        "gemini-1.5-pro-exp-0827",
     ]
 
     META = RemoteLanguageModelMetaInfo(
@@ -360,7 +390,7 @@ class GoogleModel(HttpServiceModel):
         },
         language_models=_LANGUAGE_MODELS,
         visual_language_models=_VISUAL_LANGUAGE_MODELS,
-        tool_models=["gemini-pro", "gemini-1.5-pro-latest"],
+        tool_models=_VISUAL_LANGUAGE_MODELS,
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = GoogleRequestBody

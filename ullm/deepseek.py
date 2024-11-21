@@ -17,10 +17,7 @@ class DeepSeekRequestBody(OpenAIRequestBody):
     ## excluded parameters
     logit_bias: Optional[Any] = Field(None, exclude=True)
     n: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
     seed: Optional[Any] = Field(None, exclude=True)
-    tools: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
     user: Optional[Any] = Field(None, exclude=True)
 
 
@@ -28,13 +25,12 @@ class DeepSeekRequestBody(OpenAIRequestBody):
 class DeepSeekModel(OpenAICompatibleModel):
     # reference: https://platform.deepseek.com/api-docs/api/create-chat-completion/index.html
     META = RemoteLanguageModelMetaInfo(
-        api_url="https://api.deepseek.com/v1/chat/completions",
+        api_url="https://api.deepseek.com/chat/completions",
         language_models=[
             "deepseek-chat",
-            "deepseek-coder",
         ],
         visual_language_models=[],
-        tool_models=[],
+        tool_models=["deepseek-chat"],
         online_models=[],
         required_config_fields=["api_key"],
     )

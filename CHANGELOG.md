@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## v0.6.0
+
+Added
+
+- Implemented `ByteDanceModel`
+- Implemented `TencentModel`
+
+
+Changed
+
+- Updated supported models
+- Supported `redis` backend in `ModelHub`
+
+
 ## v0.5.1
 
 Fixed

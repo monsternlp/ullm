@@ -11,6 +11,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .bytedance import ByteDanceModel
 from .cloudflare import CloudflareModel
 from .cohere import CohereModel
 from .deepseek import DeepSeekModel
@@ -26,6 +27,7 @@ from .openrouter import OpenRouterModel
 from .perplexity import PerplexityModel
 from .skywork import SkyWorkModel
 from .stepfun import StepFunModel
+from .tencent import TencentModel
 from .together import TogetherAIModel
 from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
@@ -37,6 +39,7 @@ __all__ = [
     AzureOpenAIModel,
     BaichuanModel,
     BaiduModel,
+    ByteDanceModel,
     CloudflareModel,
     CohereModel,
     DeepSeekModel,
@@ -57,6 +60,7 @@ __all__ = [
     RemoteLanguageModel,
     SkyWorkModel,
     StepFunModel,
+    TencentModel,
     TogetherAIModel,
     ToolMessage,
     UserMessage,

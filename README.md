@@ -48,7 +48,7 @@ ullm 希望能为本地模型以及众多在线 LLM 服务提供统一的调用�
 
 ## 功能与特性
 
-- 支持 OpenAI 等 21 个在线 LLM 服务，详见「[在线服务](#在线服务)」一节
+- 支持 OpenAI 等 23 个在线 LLM 服务，详见「[在线服务](#在线服务)」一节
 - 支持和 OpenAI 接口兼容的自建服务
 - 支持 Ollama API
 - 配置化的使用方式，为所有不同模型及服务提供统一的初始化方式，详见「[使用](#使用)」一节
@@ -70,29 +70,32 @@ TBD
 
 ### 在线服务
 
+
 | 平台 | Provider ID            | 模型数量 | 视觉模型数量 | 支持工具调用的模型数量 | 联网模型数量 |
 |------|-------------------|----------|--------------|------------------------|--------------|
-| [零一万物](https://platform.lingyiwanwu.com/docs)     | 01ai              |        9 |            1 |                      0 |            2 |
-| [阿里巴巴](https://help.aliyun.com/zh/dashscope/developer-reference/model-square/?spm=a2c4g.11186623.0.0.1cca23edHYSGqT)      | alibaba           |       51 |            4 |                      7 |            7 |
-| [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)     | anthropic         |        3 |            3 |                      3 |            0 |
+| [零一万物](https://platform.lingyiwanwu.com/docs)     | 01ai              |        9 |            1 |                      1 |            2 |
+| [阿里巴巴](https://help.aliyun.com/zh/dashscope/developer-reference/model-square/?spm=a2c4g.11186623.0.0.1cca23edHYSGqT)      | alibaba           |       101 |            17 |                      13 |            9 |
+| [Anthropic](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)     | anthropic         |        8 |            8 |                      8 |            0 |
 | [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions)     | azure-openai      |       20 |            4 |                     11 |            0 |
-| [百川智能](https://platform.baichuan-ai.com/docs/api)     | baichuan          |        10 |            0 |                      3 |            5 |
-| [百度](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu)     | baidu             |       51 |            0 |                     28 |           14 |
-| [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) | cloudflare        |       35 |               0 |             0 |               0 |
-| [Cohere](https://docs.cohere.com/reference/about)     | cohere            |       12 |            0 |                      4 |            6 |
-| [DeepSeek](https://platform.deepseek.com/docs)     | deepseek          |        2 |            0 |                      0 |            0 |
-| [Google](https://ai.google.dev/gemini-api/docs)     | google            |        13 |            9 |                      2 |            0 |
-| [Groq](https://console.groq.com/docs/quickstart)     | groq              |        4 |            0 |                      4 |            0 |
-| [科大讯飞](https://www.xfyun.cn/doc/spark/%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E.html)     | iflytek           |        4 |            0 |                      2 |            0 |
-| [MiniMax](https://www.minimaxi.com/document/algorithm-concept?id=6433f37594878d408fc8295d)     | minimax           |        6 |            0 |                      6 |            0 |
+| [百川智能](https://platform.baichuan-ai.com/docs/api)     | baichuan          |        12 |            0 |                      5 |            6 |
+| [百度](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Nlks5zkzu)     | baidu             |       52 |            0 |                     24 |           14 |
+| [字节跳动豆包](https://www.volcengine.com/docs/82379/1298454)     | bytedance             |      7  |            0 |                     7 |           0 |
+| [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) | cloudflare        |       36 |               0 |             1 |               0 |
+| [Cohere](https://docs.cohere.com/reference/about)     | cohere            |       12 |            0 |                      6 |            0 |
+| [DeepSeek](https://platform.deepseek.com/docs)     | deepseek          |        1 |            0 |                      1 |            0 |
+| [Google](https://ai.google.dev/gemini-api/docs)     | google            |        15 |            15 |                      15 |            0 |
+| [Groq](https://console.groq.com/docs/quickstart)     | groq              |        16 |            2 |                      9 |            0 |
+| [科大讯飞](https://www.xfyun.cn/doc/spark/%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E.html)     | iflytek           |        12 |            0 |                      5 |            6 |
+| [MiniMax](https://www.minimaxi.com/document/algorithm-concept?id=6433f37594878d408fc8295d)     | minimax           |        7 |            0 |                      3 |            1 |
 | [Moonshot](https://platform.moonshot.cn/docs/api/chat#%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF)     | moonshot          |        3 |            0 |                      3 |            0 |
-| [OpenAI](https://platform.openai.com/docs/api-reference/chat)      | openai            |       21 |            5 |                     12 |            0 |
-| [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      162 |           16 |                    162 |            2 |
-| [Perplexity](https://docs.perplexity.ai/docs/getting-started)     | perplexity        |        7 |            0 |                      0 |            2 |
+| [OpenAI](https://platform.openai.com/docs/api-reference/chat)      | openai            |       21 |            8 |                     12 |            0 |
+| [OpenRouter](https://openrouter.ai/docs)     | openrouter        |      195 |           33 |                    195 |            4 |
+| [Perplexity](https://docs.perplexity.ai/docs/getting-started)     | perplexity        |        7 |            0 |                      0 |            3 |
 | [天工](https://model-platform.tiangong.cn/api-reference) | skywork           |        1 |               0 |             0 |               0 |
-| [阶跃星辰](https://platform.stepfun.com/docs/Chat/chat-completion-create)     | stepfun           |        6 |            2 |                      0 |            0 |
+| [阶跃星辰](https://platform.stepfun.com/docs/Chat/chat-completion-create)     | stepfun           |        14 |            3 |                      10 |            4 |
+| [腾讯混元](https://cloud.tencent.com/document/product/1729/105701) | tencent          |       20 |               1 |            3 |               9 |
 | [Together AI](https://docs.together.ai/docs/quickstart) | together          |       59 |               0 |            59 |               0 |
-| [智谱](https://open.bigmodel.cn/dev/api)     | zhipu             |        5 |            1 |                      4 |            2 |
+| [智谱](https://open.bigmodel.cn/dev/api)     | zhipu             |        18 |            2 |                      16 |            8 |
 | OpenAI 接口兼容的服务     | openai-compatible |          |              |                        |              |
 | Ollama API     | ollama            |          |              |                        |              |
 

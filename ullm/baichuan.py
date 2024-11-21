@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, conint, conlist, validate_call
+from pydantic import BaseModel, Field, conint, conlist, model_validator, validate_call
 
 from .base import (
     AssistantMessage,
@@ -18,6 +18,7 @@ from .openai import (
     OpenAICompatibleModel,
     OpenAIFunctionObject,
     OpenAIRequestBody,
+    OpenAIResponseBody,
     OpenAIToolCall,
 )
 
@@ -72,7 +73,7 @@ BaichuanFunctionObject = OpenAIFunctionObject
 class BaichuanTool(BaseModel):
     type: Optional[Literal["web_search", "retrieval", "function"]] = None
     retrieval: Optional[BaichuanRetrievalObject] = None
-    web_search: Optional[BaichuanRetrievalObject] = None
+    web_search: Optional[BaichuanWebSearchObject] = None
     function: Optional[BaichuanFunctionObject] = None
 
     @classmethod
@@ -103,6 +104,20 @@ class BaichuanRequestBody(OpenAIRequestBody):
     top_k: Optional[conint(ge=0, le=20)] = None
 
 
+class BaichuanResponseBody(OpenAIResponseBody):
+    @model_validator(mode="before")
+    @classmethod
+    def check_usage(cls, values):
+        if "usage" not in values:
+            values["usage"] = {
+                "completion_tokens": 0,
+                "prompt_tokens": 0,
+                "total_tokens": 0,
+            }
+
+        return values
+
+
 @RemoteLanguageModel.register("baichuan")
 class BaichuanModel(OpenAICompatibleModel):
     # reference: https://platform.baichuan-ai.com/docs/api
@@ -110,32 +125,38 @@ class BaichuanModel(OpenAICompatibleModel):
         api_url="https://api.baichuan-ai.com/v1/chat/completions",
         language_models=[
             "Baichuan2-Turbo",
-            "Baichuan2-Turbo-192k",
             "Baichuan2-Turbo-online",
-            "Baichuan2-Turbo-192k-online",
             "Baichuan3-Turbo",
             "Baichuan3-Turbo-128k",
             "Baichuan3-Turbo-online",
             "Baichuan3-Turbo-128k-online",
             "Baichuan4",
             "Baichuan4-online",
+            "Baichuan4-Turbo",
+            "Baichuan4-Turbo-online",
+            "Baichuan4-Air",
+            "Baichuan4-Air-online",
         ],
         visual_language_models=[],
         tool_models=[
             "Baichuan3-Turbo",
             "Baichuan3-Turbo-128k",
             "Baichuan4",
+            "Baichuan4-Turbo",
+            "Baichuan4-Air",
         ],
         online_models=[
             "Baichuan2-Turbo-online",
-            "Baichuan2-Turbo-192k-online",
             "Baichuan3-Turbo-online",
             "Baichuan3-Turbo-128k-online",
             "Baichuan4-online",
+            "Baichuan4-Turbo-online",
+            "Baichuan4-Air-online",
         ],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = BaichuanRequestBody
+    RESPONSE_BODY_CLS = BaichuanResponseBody
 
     @classmethod
     @validate_call
