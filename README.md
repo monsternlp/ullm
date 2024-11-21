@@ -289,25 +289,96 @@ model = LanguageModel.from_config(model_config)
   model.chat([{"role": "user", "content": "Hello"}])
   ```
 
-默认情况下 `ModelHub` 会生成一个 `SQLite3` 的数据库文件 `$HOME/.ullm.db`，并在这个数据库中存储已注册的模型实例配置，若希望更改数据库文件路径或使用其他数据库引擎（如 `MySQL` 或 `PostPostgres`），可以在实例化 `ModelHub` 时设置数据库 URL：
+默认情况下 `ModelHub` 会生成一个 `SQLite3` 的数据库文件 `$HOME/.ullm.db`，并在这个数据库中存储已注册的模型实例配置，若希望更改数据库文件路径或使用其他存储后端（如 `MySQL` 或 `PostPostgres` 或），可以通过不同方法来自定义存储类型和 URL：
 
-- 使用 `SQLite3` 并更改数据库文件路径为 `/home/user/mymodels.db`
+- 实例化时直接指定存储类型和 URL
 
-  ```python
-  hub = ModelHub("sqlite:////home/user/my.db")
-  ```
+  - 使用 `SQLite3` 并更改数据库文件路径为 `/home/user/mymodels.db`
 
-- 使用 `MySQL`
+    ```python
+    hub = ModelHub(hub_backend="rds", hub_db_url="sqlite:////home/user/my.db")
+    ```
 
-  ```python
-  hub = ModelHub("mysql://user:passwd@ip:port/my_db")
-  ```
+  - 使用 `MySQL`
 
-- 使用 `Postgres`
+    ```python
+    hub = ModelHub(hub_backend="rds", hub_db_url="mysql://user:passwd@ip:port/my_db")
+    ```
 
-  ```python
-  hub = ModelHub("postgresql://postgres:my_password@localhost:5432/my_db")
-  ```
+  - 使用 `Postgres`
+
+    ```python
+    hub = ModelHub(hub_backend="rds", hub_db_url="postgresql://postgres:my_password@localhost:5432/my_db")
+    ```
+
+  - 使用 `Redis`
+
+    ```python
+    hub = ModelHub(hub_backend="redis", hub_db_url="redis://localhost:6379/0", hub_redis_prefix="/ullm/model_hub/")
+    ```
+
+- 设置环境变量
+
+
+  - 使用 `SQLite3` 并更改数据库文件路径为 `/home/user/mymodels.db`
+
+    ```shell
+    export ULLM_HUB_BACKEND=rds
+    export ULLM_HUB_DB_URL=sqlite:////home/user/my.db
+    ```
+
+  - 使用 `MySQL`
+
+    ```shell
+    export ULLM_HUB_BACKEND=rds
+    export ULLM_HUB_DB_URL=mysql://user:passwd@ip:port/my_db
+    ```
+
+  - 使用 `Postgres`
+
+    ```shell
+    export ULLM_HUB_BACKEND=rds
+    export ULLM_HUB_DB_URL=postgresql://postgres:my_password@localhost:5432/my_db
+    ```
+
+  - 使用 `Redis`
+
+    ```shell
+    export ULLM_HUB_BACKEND=redis
+    export ULLM_HUB_DB_URL=redis://localhost:6379/0
+    export ULLM_HUB_REDIS_PREFIX=/ullm/model_hub/
+    ```
+
+- 设置 `.env` 环境变量文件
+
+  - 使用 `SQLite3` 并更改数据库文件路径为 `/home/user/mymodels.db`
+
+    ```
+    ULLM_HUB_BACKEND=rds
+    ULLM_HUB_DB_URL=sqlite:////home/user/my.db
+    ```
+
+  - 使用 `MySQL`
+
+    ```
+    ULLM_HUB_BACKEND=rds
+    ULLM_HUB_DB_URL=mysql://user:passwd@ip:port/my_db
+    ```
+
+  - 使用 `Postgres`
+
+    ```
+    ULLM_HUB_BACKEND=rds
+    ULLM_HUB_DB_URL=postgresql://postgres:my_password@localhost:5432/my_db
+    ```
+
+  - 使用 `Redis`
+
+    ```
+    ULLM_HUB_BACKEND=redis
+    ULLM_HUB_DB_URL=redis://localhost:6379/0
+    ULLM_HUB_REDIS_PREFIX=/ullm/model_hub/
+    ```
 
 ### 设置生成参数
 
@@ -469,14 +540,16 @@ Usage: ullm chat [OPTIONS]
   A simple chat demo
 
 Options:
-  --model TEXT                 Model ID registered in hub, or a model config
-                               file  [required]
-  --model-hub-db-url TEXT      Model hub database url
+  --model TEXT                    Model ID registered in hub, or a model
+                                  config file  [required]
+  --model-hub-backend [rds|redis]
+                                  Model hub backend
+  --model-hub-db-url TEXT         Model hub database url
   --system TEXT
   --temperature FLOAT
   --max-output-tokens INTEGER
   --keep-turns-num INTEGER
-  -h, --help                   Show this message and exit.
+  -h, --help                      Show this message and exit.
 ```
 
 ### `register-model`
@@ -488,10 +561,12 @@ Usage: ullm register-model [OPTIONS]
   Register a new model to hub
 
 Options:
-  --db-url TEXT             Model hub database url
-  --model-id TEXT           [required]
-  --model-config-file TEXT  [required]
-  -h, --help                Show this message and exit.
+  --model-hub-backend [rds|redis]
+                                  Model hub backend
+  --model-hub-db-url TEXT         Model hub database url
+  --model-id TEXT
+  --model-config-file TEXT
+  -h, --help                      Show this message and exit.
 ```
 
 
@@ -503,7 +578,12 @@ Usage: ullm list-models [OPTIONS]
 
   List all registered models
 
+Usage: python -m ullm.cli list-models [OPTIONS]
+
+  List all registered models
+
 Options:
-  --db-url TEXT  Model hub database url
-  -h, --help     Show this message and exit.
+  --model-hub-backend [rds|redis]
+                                  Model hub backend
+  --model-hub-db-url TEXT         Model hub database url
 ```
