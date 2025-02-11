@@ -249,6 +249,9 @@ class LanguageModel(ABC):
     ) -> GenerationResult:
         pass
 
+    def is_ready(self):
+        return True
+
 
 class ModelConfig(BaseModel):
     type: Literal["local", "remote"]
@@ -534,6 +537,17 @@ class RemoteLanguageModel(LanguageModel):
     @validate_call
     def generate(self, prompt: str, config: Optional[GenerateConfig] = None) -> GenerationResult:
         return self.chat([UserMessage(content=prompt)], config=config)
+
+    def is_ready(self):
+        ready = True
+        try:
+            response = self.generate("hello", config={"max_output_tokens": 1})
+            if response.stop_reason == "error":
+                ready = False
+        except Exception:
+            ready = False
+
+        return ready
 
 
 class HttpRequestData(BaseModel):
