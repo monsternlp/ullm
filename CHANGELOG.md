@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.7.0
+
+Added
+
+- Implemented `LanguageModel.is_ready` to check model status
+
 ## v0.6.0
 
 Added
