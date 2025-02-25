@@ -38,13 +38,16 @@ class ZeroOneAIModel(OpenAICompatibleModel):
             "yi-medium",
             "yi-medium-200k",
             "yi-spark",
-            "yi-large-rag",
-            "yi-large-turbo",
+            "yi-large-preview",
             "yi-large-fc",
         ],
-        visual_language_models=["yi-vision"],
+        visual_language_models=[
+            "yi-vision",
+            "yi-vision-solution",
+            "yi-vision-v2",
+        ],
         tool_models=["yi-large-fc"],
-        online_models=["yi-large-rag"],
+        online_models=[],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = ZeroOneAIRequestBody
