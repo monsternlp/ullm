@@ -22,6 +22,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     SecretStr,
+    ValidationError,
     conlist,
     field_serializer,
     field_validator,
@@ -669,7 +670,10 @@ class HttpServiceModel(RemoteLanguageModel):
         )
         result = None
         if self._is_valid_response(response):
-            result = self._parse_response(response)
+            try:
+                result = self._parse_response(response)
+            except ValidationError:
+                result = self._parse_error_response(response)
         else:
             result = self._parse_error_response(response)
 
