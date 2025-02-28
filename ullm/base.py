@@ -118,6 +118,7 @@ class Citation(BaseModel):
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
     content: Optional[str] = ""
+    reasoning_content: Optional[str] = None
     tool_calls: Optional[List[ToolCall]] = None
     citations: Optional[List[Citation]] = None
 
@@ -201,6 +202,7 @@ class GenerationResult(BaseModel):
     model: str
     stop_reason: str
     content: Optional[str] = ""
+    reasoning_content: Optional[str] = ""
     tool_calls: Optional[List[ToolCall]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
