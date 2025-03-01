@@ -32,6 +32,7 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .openai import OpenAICompatibleModel
 
 
 class TencentImageURL(BaseModel):
@@ -473,3 +474,18 @@ class TencentModel(HttpServiceModel):
             return False
 
         return True
+
+
+@RemoteLanguageModel.register("tencent-lke")
+class TencentLKEModel(OpenAICompatibleModel):
+    # reference: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu
+    META = RemoteLanguageModelMetaInfo(
+        api_url="https://api.lkeap.cloud.tencent.com/v1",
+        language_models=[
+            "deepseek-v3",
+            "deepseek-r1",
+        ],
+        visual_language_models=[],
+        tool_models=[],
+        required_config_fields=["api_key"],
+    )
