@@ -204,7 +204,7 @@ class OpenAIRequestBody(BaseModel):
 
 
 class OpenAIResponseChoice(BaseModel):
-    finish_reason: Literal["stop", "length", "content_filter", "tool_calls", "eos", "function_call"]
+    finish_reason: str
     index: int
     message: OpenAIAssistantMessage
 
