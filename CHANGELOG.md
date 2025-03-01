@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v0.8.0
+
+Added
+
+- Implemented `TencentLKEModel`
+
+
+Changed
+
+- Updated supported models
+
 ## v0.7.0
 
 Added
