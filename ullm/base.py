@@ -22,6 +22,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     SecretStr,
+    ValidationError,
     conlist,
     field_serializer,
     field_validator,
@@ -117,6 +118,7 @@ class Citation(BaseModel):
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
     content: Optional[str] = ""
+    reasoning_content: Optional[str] = None
     tool_calls: Optional[List[ToolCall]] = None
     citations: Optional[List[Citation]] = None
 
@@ -200,6 +202,7 @@ class GenerationResult(BaseModel):
     model: str
     stop_reason: str
     content: Optional[str] = ""
+    reasoning_content: Optional[str] = ""
     tool_calls: Optional[List[ToolCall]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
@@ -669,7 +672,10 @@ class HttpServiceModel(RemoteLanguageModel):
         )
         result = None
         if self._is_valid_response(response):
-            result = self._parse_response(response)
+            try:
+                result = self._parse_response(response)
+            except ValidationError:
+                result = self._parse_error_response(response)
         else:
             result = self._parse_error_response(response)
 

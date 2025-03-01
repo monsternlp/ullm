@@ -37,8 +37,15 @@ class ByteDanceModel(OpenAICompatibleModel):
             "Doubao-pro-32k",
             "Doubao-pro-128k",
             "Doubao-pro-256k",
+            "Doubao-1.5-lite-32k",
+            "Doubao-1.5-pro-32k",
+            "Doubao-1.5-pro-256k",
         ],
-        visual_language_models=[],
+        visual_language_models=[
+            "Doubao-vision-lite-32k",
+            "Doubao-vision-pro-32k",
+            "Doubao-1.5-vision-pro-32k",
+        ],
         online_models=[],
         tool_models=[
             "Doubao-lite-4k",
@@ -48,6 +55,9 @@ class ByteDanceModel(OpenAICompatibleModel):
             "Doubao-pro-32k",
             "Doubao-pro-128k",
             "Doubao-pro-256k",
+            "Doubao-1.5-lite-32k",
+            "Doubao-1.5-pro-32k",
+            "Doubao-1.5-pro-256k",
         ],
         required_config_fields=["api_key", "bytedance_endpoint"],
     )

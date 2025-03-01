@@ -61,7 +61,7 @@ class CloudflareChatMessage(BaseModel):
 
 
 class CloudflareRequestBody(BaseModel):
-    # https://developers.cloudflare.com/api/operations/workers-ai-post-run-cf-meta-llama-3-8b-instruct
+    # https://developers.cloudflare.com/workers-ai/models/deepseek-coder-6.7b-base-awq/
     lora: Optional[str] = None
     max_tokens: Optional[PositiveInt] = None
     prompt: Optional[str] = None
@@ -81,7 +81,7 @@ class CloudflareResponseResult(BaseModel):
 
 
 class CloudflareResponseBody(BaseModel):
-    # https://developers.cloudflare.com/api/operations/workers-ai-post-run-cf-meta-llama-3-8b-instruct
+    # https://developers.cloudflare.com/workers-ai/models/deepseek-coder-6.7b-base-awq/
     success: Optional[bool] = True
     result: CloudflareResponseResult
 
@@ -99,8 +99,8 @@ class CloudflareModel(HttpServiceModel):
     _MODEL_MAPPINGS = {
         "deepseek-coder-6.7b-base-awq": "@hf/thebloke/deepseek-coder-6.7b-base-awq",
         "deepseek-coder-6.7b-instruct-awq": "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
-        "deepseek-math-7b-base": "@cf/deepseek-ai/deepseek-math-7b-base",
         "deepseek-math-7b-instruct": "@cf/deepseek-ai/deepseek-math-7b-instruct",
+        "deepseek-r1-distill-qwen-32b": "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
         "discolm-german-7b-v1-awq": "@cf/thebloke/discolm-german-7b-v1-awq",
         "falcon-7b-instruct": "@cf/tiiuae/falcon-7b-instruct",
         "gemma-2b-it-lora": "@cf/google/gemma-2b-it-lora",
@@ -179,6 +179,6 @@ class CloudflareModel(HttpServiceModel):
         self, config: GenerateConfig, system: Optional[str] = None
     ) -> Dict[str, Any]:
         return {
-            "max_tokens": config.max_output_tokens or self.config.output_tokens,
+            "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
             "temperature": config.temperature or self.config.temperature,
         }

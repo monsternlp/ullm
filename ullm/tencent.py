@@ -32,12 +32,17 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
+from .openai import OpenAICompatibleModel
+
+
+class TencentImageURL(BaseModel):
+    url: str = Field(..., serialization_alias="Url")
 
 
 class TencentContent(BaseModel):
     type: Literal["text", "image_url"] = Field(..., serialization_alias="Type")
     text: Optional[str] = Field(None, serialization_alias="Text")
-    image_url: Optional[str] = Field(None, serialization_alias="ImageUrl")
+    image_url: Optional[TencentImageURL] = Field(None, serialization_alias="ImageUrl")
 
 
 class TencentFunctionCall(BaseModel):
@@ -85,11 +90,11 @@ class TencentChatMessage(BaseModel):
                         contents.append(
                             {
                                 "type": "image_url",
-                                "image_url": f"data:{part.mime_type};base64,{base64_data}",
+                                "image_url": {"url": f"data:{part.mime_type};base64,{base64_data}"},
                             }
                         )
                     else:
-                        contents.append({"type": "image_url", "image_url": part.url})
+                        contents.append({"type": "image_url", "image_url": {"url": part.url}})
 
             if not has_image:
                 content = "\n".join([part["text"] for part in contents])
@@ -251,39 +256,58 @@ class TencentModel(HttpServiceModel):
             "hunyuan-lite",
             "hunyuan-standard",
             "hunyuan-standard-256K",
-            "hunyuan-pro",
             "hunyuan-code",
             "hunyuan-role",
             "hunyuan-functioncall",
             "hunyuan-turbo",
             "hunyuan-turbo-latest",
+            "hunyuan-turbo-20241223",
+            "hunyuan-turbo-20241120",
+            "hunyuan-turbos-20250226",
+            "hunyuan-turbos-latestxrep",
             "hunyuan-large",
+            "hunyuan-large-longcontext",
             "hunyuan-standard-online",
             "hunyuan-standard-256K-online",
-            "hunyuan-pro-online",
             "hunyuan-code-online",
             "hunyuan-role-online",
             "hunyuan-functioncall-online",
             "hunyuan-turbo-online",
             "hunyuan-turbo-latest-online",
+            "hunyuan-turbo-20241223-online",
+            "hunyuan-turbo-20241120-online",
+            "hunyuan-turbos-20250226-online",
+            "hunyuan-turbos-latestxrep-online",
             "hunyuan-large-online",
+            "hunyuan-large-longcontext-online",
         ],
-        visual_language_models=["hunyuan-vision"],
+        visual_language_models=[
+            "hunyuan-vision",
+            "hunyuan-lite-vision",
+            "hunyuan-standard-vision",
+            "hunyuan-turbo-vision",
+        ],
         tool_models=[
             "hunyuan-turbo",
-            "hunyuan-pro",
             "hunyuan-functioncall",
+            "hunyuan-turbo-online",
+            "hunyuan-functioncall-online",
         ],
         online_models=[
+            "hunyuan-large-longcontext",
             "hunyuan-standard-online",
             "hunyuan-standard-256K-online",
-            "hunyuan-pro-online",
             "hunyuan-code-online",
             "hunyuan-role-online",
             "hunyuan-functioncall-online",
             "hunyuan-turbo-online",
             "hunyuan-turbo-latest-online",
+            "hunyuan-turbo-20241223-online",
+            "hunyuan-turbo-20241120-online",
+            "hunyuan-turbos-20250226-online",
+            "hunyuan-turbos-latestxrep-online",
             "hunyuan-large-online",
+            "hunyuan-large-longcontext-online",
         ],
         required_config_fields=["api_key", "secret_key", "region"],
     )
@@ -450,3 +474,18 @@ class TencentModel(HttpServiceModel):
             return False
 
         return True
+
+
+@RemoteLanguageModel.register("tencent-lke")
+class TencentLKEModel(OpenAICompatibleModel):
+    # reference: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu
+    META = RemoteLanguageModelMetaInfo(
+        api_url="https://api.lkeap.cloud.tencent.com/v1",
+        language_models=[
+            "deepseek-v3",
+            "deepseek-r1",
+        ],
+        visual_language_models=[],
+        tool_models=[],
+        required_config_fields=["api_key"],
+    )

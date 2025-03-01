@@ -148,21 +148,27 @@ class MiniMaxModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.minimax.chat/v1/text/chatcompletion_v2",
         language_models=[
-            "abab7-chat-preview",
-            "abab6.5t-chat",
+            "MiniMax-Text-01",
+            "MiniMax-Text-01-online",
             "abab6.5s-chat",
             "abab6.5s-chat-online",
-            "abab6.5g-chat",
-            "abab5.5-chat",
-            "abab5.5s-chat",
+            "DeepSeek-R1",
+            "DeepSeek-R1-online",
         ],
         visual_language_models=[],
         tool_models=[
+            "MiniMax-Text-01",
+            "MiniMax-Text-01-online",
             "abab6.5s-chat",
-            "abab5.5-chat",
             "abab6.5s-chat-online",
+            "DeepSeek-R1",
+            "DeepSeek-R1-online",
         ],
-        online_models=["abab6.5s-chat-online"],
+        online_models=[
+            "MiniMax-Text-01-online",
+            "abab6.5s-chat-online",
+            "DeepSeek-R1-online",
+        ],
         required_config_fields=["api_key"],
     )
     REQUEST_BODY_CLS = MiniMaxRequestBody

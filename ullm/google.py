@@ -370,9 +370,6 @@ class GoogleModel(HttpServiceModel):
         "gemini-1.5-flash-001",
         "gemini-1.5-flash-002",
         "gemini-1.5-flash-latest",
-        "gemini-1.5-flash-exp-0827",
-        "gemini-1.5-flash-8b-exp-0827",
-        "gemini-1.5-flash-8b-exp-0924",
         "gemini-1.5-flash-8b",
         "gemini-1.5-flash-8b-001",
         "gemini-1.5-flash-8b-latest",
@@ -380,7 +377,13 @@ class GoogleModel(HttpServiceModel):
         "gemini-1.5-pro-001",
         "gemini-1.5-pro-002",
         "gemini-1.5-pro-latest",
-        "gemini-1.5-pro-exp-0827",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash-lite-001",
+        "gemini-2.0-pro-exp-02-05",
+        "gemini-2.0-flash-thinking-exp-01-21",
+        "learnlm-1.5-pro-experimental",
     ]
 
     META = RemoteLanguageModelMetaInfo(

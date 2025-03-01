@@ -115,8 +115,8 @@ class CohereModel(OpenAICompatibleModel):
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.cohere.ai/v2/chat",
         language_models=[
-            "c4ai-aya-23-35b",
-            "c4ai-aya-23-8b",
+            "c4ai-aya-expanse-8b",
+            "c4ai-aya-expanse-23b",
             "command",
             "command-nightly",
             "command-light",
@@ -127,6 +127,7 @@ class CohereModel(OpenAICompatibleModel):
             "command-r-plus",
             "command-r-plus-04-2024",
             "command-r-plus-08-2024",
+            "command-r7b-12-2024",
         ],
         visual_language_models=[],
         tool_models=[
@@ -136,6 +137,7 @@ class CohereModel(OpenAICompatibleModel):
             "command-r-plus",
             "command-r-plus-04-2024",
             "command-r-plus-08-2024",
+            "command-r7b-12-2024",
         ],
         online_models=[],
         required_config_fields=["api_key"],
