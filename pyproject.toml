@@ -51,7 +51,7 @@ omit = ["tests/*"]
 [tool.codespell]
 skip = "*.lock,./.tox,./.venv,./.git,./venv"
 quiet-level = 3
-ignore-words-list = "ullm,BA"
+ignore-words-list = "ullm,BA,lke"
 count = ""
 
 [tool.ruff]
