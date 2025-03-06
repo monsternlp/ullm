@@ -21,6 +21,7 @@ class HubConfig(BaseSettings):
         env_prefix = "ULLM_"
         env_file = ".env"
         env_file_encoding = "utf8"
+        extra = "ignore"
 
     HUB_BACKEND: Optional[Literal["redis", "rds"]] = None
     HUB_DB_URL: Optional[str] = None
