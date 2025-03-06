@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.8.1
+
+Fixed
+
+- Fixed `HubConfig`: ignore extra fields in `.env`
+
 ## v0.8.0
 
 Added
