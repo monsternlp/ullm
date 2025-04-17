@@ -196,6 +196,7 @@ class GenerateConfig(BaseModel):
     response_format: Optional[Literal["text", "json_object"]] = "text"
     tools: Optional[List[Tool]] = None
     tool_choice: Optional[ToolChoice] = None
+    extra: Optional[dict] = None
 
 
 class GenerationResult(BaseModel):
@@ -571,6 +572,7 @@ class HttpRequestData(BaseModel):
 class HttpServiceModel(RemoteLanguageModel):
     REQUEST_BODY_CLS = None
     RESPONSE_BODY_CLS = None
+    EXTRA_CONFIG_CLS = None
 
     @abstractmethod
     def _make_api_headers(self):
@@ -607,6 +609,20 @@ class HttpServiceModel(RemoteLanguageModel):
         return config.model_dump(exclude_none=True)
 
     @validate_call
+    def _convert_extra_generation_config(
+        self, extra_config: Optional[dict] = None
+    ) -> Dict[str, Any]:
+        if not extra_config:
+            return {}
+
+        if self.EXTRA_CONFIG_CLS:
+            return self.EXTRA_CONFIG_CLS.model_validate(extra_config).model_dump(
+                mode="json", exclude_none=True
+            )
+
+        return extra_config
+
+    @validate_call
     def _make_api_body(
         self,
         messages: conlist(ChatMessage, min_length=1),
@@ -621,6 +637,7 @@ class HttpServiceModel(RemoteLanguageModel):
             pass
 
         always_merger.merge(body, self._convert_generation_config(config, system=system))
+        always_merger.merge(body, self._convert_extra_generation_config(config.extra))
         return self.REQUEST_BODY_CLS.model_validate(body).model_dump(
             exclude_none=True, by_alias=True
         )

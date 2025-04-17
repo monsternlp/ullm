@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.9.0
+
+Added:
+
+- Supported extra config with `GenerateConfig.extra`
+
 ## v0.8.1
 
 Fixed
