@@ -27,7 +27,6 @@ class DeepSeekRequestBody(OpenAIRequestBody):
 class DeepSeekAssistantMessage(OpenAIAssistantMessage):
     # FIXME: prefix/reasoning_content 的使用需要 base_url="https://api.deepseek.com/beta"
     prefix: Optional[bool] = None
-    reasoning_content: Optional[str] = ""
 
 
 class DeepSeekResponseChoice(OpenAIResponseChoice):

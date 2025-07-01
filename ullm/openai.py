@@ -105,6 +105,7 @@ class OpenAIToolCall(ToolCall):
 
 class OpenAIAssistantMessage(AssistantMessage):
     tool_calls: Optional[List[OpenAIToolCall]] = None
+    reasoning_content: Optional[str] = ""
 
     @classmethod
     def from_standard(cls, message: AssistantMessage):
@@ -235,6 +236,7 @@ class OpenAIResponseBody(BaseModel):
             model=model or self.model,
             stop_reason=self.choices[0].finish_reason,
             content=self.choices[0].message.content,
+            reasoning_content=self.choices[0].message.reasoning_content,
             tool_calls=tool_calls,
             input_tokens=self.usage.prompt_tokens,
             output_tokens=self.usage.completion_tokens,

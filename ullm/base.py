@@ -197,6 +197,7 @@ class GenerateConfig(BaseModel):
     tools: Optional[List[Tool]] = None
     tool_choice: Optional[ToolChoice] = None
     extra: Optional[dict] = None
+    thinking_type: Optional[Literal["disabled", "enabled", "auto"]] = None
 
 
 class GenerationResult(BaseModel):
