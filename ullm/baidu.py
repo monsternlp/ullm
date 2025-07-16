@@ -29,11 +29,11 @@ class BaiduWebSearchOptions(BaseModel):
 class BaiduRequestBody(OpenAIRequestBody):
     # reference: https://platform.moonshot.cn/docs/api/chat
     ## excluded parameters
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    max_tokens: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    max_tokens: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
     response_format: Optional[BaiduResponseFormat] = None

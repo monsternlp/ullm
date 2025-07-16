@@ -65,15 +65,15 @@ class MiniMaxTool(BaseModel):
 class MiniMaxRequestBody(OpenAIRequestBody):
     # https://www.minimaxi.com/document/guides/chat-model/V2?id=65e0736ab2845de20908e2dd
     ## excluded parameters
-    frequency_penalty: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    presence_penalty: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    frequency_penalty: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    presence_penalty: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
     temperature: Optional[confloat(gt=0.0, le=1.0)] = None

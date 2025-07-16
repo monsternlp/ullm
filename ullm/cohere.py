@@ -31,14 +31,14 @@ class CohereDocument(BaseModel):
 class CohereRequestBody(OpenAIRequestBody):
     # reference: https://docs.cohere.com/v2/reference/chat
     ## excluded parameters
-    stop: Optional[Any] = Field(None, exclude=True)
-    top_p: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    stop: Optional[Any] = Field(default=None, exclude=True)
+    top_p: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    tool_choice: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
     frequency_penalty: Optional[confloat(ge=0.0, le=1.0)] = None

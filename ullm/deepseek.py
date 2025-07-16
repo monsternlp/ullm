@@ -18,10 +18,10 @@ from .openai import (
 class DeepSeekRequestBody(OpenAIRequestBody):
     # reference: https://platform.moonshot.cn/docs/api/chat
     ## excluded parameters
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
 
 class DeepSeekAssistantMessage(OpenAIAssistantMessage):

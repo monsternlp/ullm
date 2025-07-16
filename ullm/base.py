@@ -276,84 +276,86 @@ class RemoteLanguageModelConfig(ModelConfig):
     provider: str = Field(..., description="模型提供方名称")
     model: str = Field(..., description="模型名称")
     is_visual_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="该模型是否支持视觉理解，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_tool_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="是否支持工具，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_online_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="是否支持联网，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_url: Optional[HttpUrl] = Field(
-        None,
+        default=None,
         description="有的 provider 并无公开的固定 URL 需要自己指定，如自己部署的 API 代理服务",
         examples=["http://example.com/api/v1/chat/completion"],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_key: Optional[SecretStr] = Field(
-        "", examples=["sk-************************************************"]
+        default=SecretStr(""),
+        examples=["sk-************************************************"]
     )
     secret_key: Optional[SecretStr] = Field(
-        "",
+        default=SecretStr(""),
         description="讯飞星火 api_secret, 文心一言 secret key，腾讯混元 secret_key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
         json_schema_extra={"providers": ["iflytek", "baidu"]},
     )
     azure_endpoint: Optional[str] = Field(
-        "",
+        default="",
         description="用于 Azure OpenAI",
         examples=["https://example-endpoint.openai.azure.com/"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_deployment_name: Optional[str] = Field(
-        "",
+        default="",
         description="用于 Azure OpenAI",
         examples=["gpt-35-turbo"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_api_version: Optional[str] = Field(
-        "2024-02-01",
+        default="2024-02-01",
         description="用于 Azure OpenAI",
         examples=["2024-02-01"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     bytedance_endpoint: Optional[str] = Field(
-        "",
+        default="",
         description="用于字节豆包模型",
         examples=["ep-20240101000000-abc123"],
         json_schema_extra={"providers": ["bytedance"]},
     )
     region: Optional[str] = Field(
-        "",
+        default="",
         description="用于腾讯混元等需要指定地区的服务",
         examples=["ap-beijing"],
         json_schema_extra={"providers": ["tencent"]},
     )
     app_id: Optional[str] = Field(
-        "",
+        default="",
         description="讯飞星火需要",
         examples=["404abcde"],
         json_schema_extra={"providers": ["iflytek"]},
     )
-    max_tokens: Optional[PositiveInt] = Field(None, examples=[4096, 8192])
-    max_input_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 2048])
-    max_output_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 4096])
-    temperature: Optional[NonNegativeFloat] = Field(None, examples=[0.7, 0.8])
-    top_p: Optional[NonNegativeFloat] = Field(None, le=1.0, examples=[1.0])
-    top_k: Optional[NonNegativeInt] = Field(None, examples=[50, 100])
-    stop_sequences: Optional[List[str]] = Field(None, examples=[["stop1", "stop2"]])
-    http_proxy: Optional[HttpUrl] = Field(None, examples=["https://example-proxy.com"])
+    max_tokens: Optional[PositiveInt] = Field(default=None, examples=[4096, 8192])
+    max_input_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 2048])
+    max_output_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 4096])
+    temperature: Optional[NonNegativeFloat] = Field(default=None, examples=[0.7, 0.8])
+    top_p: Optional[NonNegativeFloat] = Field(
+        default=None,le=1.0, examples=[1.0])
+    top_k: Optional[NonNegativeInt] = Field(default=None, examples=[50, 100])
+    stop_sequences: Optional[List[str]] = Field(default=None, examples=[["stop1", "stop2"]])
+    http_proxy: Optional[HttpUrl] = Field(default=None, examples=["https://example-proxy.com"])
     cf_account_id: Optional[SecretStr] = Field(
-        None,
+        default=None,
         description="Cloudflare Account ID",
         examples=["fe18f2a883e6401c9ee72ab358714088"],
         json_schema_extra={"providers": ["cloudflare"]},
@@ -367,8 +369,8 @@ class RemoteLanguageModelConfig(ModelConfig):
 class RemoteLanguageModelMetaInfo(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
-    api_url: Optional[AnyUrl] = Field("", description="TODO")
-    model_api_url_mappings: Optional[Dict[str, AnyUrl]] = Field({}, description="TODO")
+    api_url: Optional[AnyUrl] = Field(default=None, description="TODO")
+    model_api_url_mappings: Optional[Dict[str, AnyUrl]] = Field(default={}, description="TODO")
     language_models: Optional[List[str]] = []
     visual_language_models: Optional[List[str]] = []
     tool_models: Optional[List[str]] = []

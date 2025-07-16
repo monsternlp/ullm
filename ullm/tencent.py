@@ -175,22 +175,20 @@ class TencentTool(BaseModel):
 class TencentRequestBody(BaseModel):
     model: str = Field(..., serialization_alias="Model")
     messages: List[TencentChatMessage] = Field(..., serialization_alias="Messages")
-    stream: Optional[bool] = Field(None, serialization_alias="Stream")
-    stream_moderation: Optional[bool] = Field(None, serialization_alias="StreamModeration")
-    top_p: Optional[float] = Field(None, serialization_alias="TopP")
-    temperature: Optional[float] = Field(None, serialization_alias="Temperature")
-    enable_enhancement: Optional[bool] = Field(None, serialization_alias="EnableEnhancement")
-    tools: Optional[List[TencentTool]] = Field(None, serialization_alias="Tools")
-    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(
-        None, serialization_alias="ToolChoice"
-    )
-    custom_tool: Optional[TencentTool] = Field(None, serialization_alias="CustomTool")
-    search_info: Optional[bool] = Field(None, serialization_alias="SearchInfo")
-    citation: Optional[bool] = Field(None, serialization_alias="Citation")
-    enable_speed_search: Optional[bool] = Field(None, serialization_alias="EnableSpeedSearch")
-    enable_multi_media: Optional[bool] = Field(None, serialization_alias="EnableMultimedia")
-    enable_deep_search: Optional[bool] = Field(None, serialization_alias="EnableDeepSearch")
-    seed: Optional[int] = Field(None, serialization_alias="Seed")
+    stream: Optional[bool] = Field(default=None, serialization_alias="Stream")
+    stream_moderation: Optional[bool] = Field(default=None, serialization_alias="StreamModeration")
+    top_p: Optional[float] = Field(default=None, serialization_alias="TopP")
+    temperature: Optional[float] = Field(default=None, serialization_alias="Temperature")
+    enable_enhancement: Optional[bool] = Field(default=None, serialization_alias="EnableEnhancement")
+    tools: Optional[List[TencentTool]] = Field(default=None, serialization_alias="Tools")
+    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(default=None, serialization_alias="ToolChoice")
+    custom_tool: Optional[TencentTool] = Field(default=None, serialization_alias="CustomTool")
+    search_info: Optional[bool] = Field(default=None, serialization_alias="SearchInfo")
+    citation: Optional[bool] = Field(default=None, serialization_alias="Citation")
+    enable_speed_search: Optional[bool] = Field(default=None, serialization_alias="EnableSpeedSearch")
+    enable_multi_media: Optional[bool] = Field(default=None, serialization_alias="EnableMultimedia")
+    enable_deep_search: Optional[bool] = Field(default=None, serialization_alias="EnableDeepSearch")
+    seed: Optional[int] = Field(default=None, serialization_alias="Seed")
 
 
 class TencentUsage(BaseModel):

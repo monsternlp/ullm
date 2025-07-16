@@ -20,15 +20,14 @@ class ByteDanceThinkingOption(BaseModel):
 class ByteDanceRequestBody(OpenAIRequestBody):
     # reference: https://www.volcengine.com/docs/82379/1298454
     ## ByteDance-specific parameters
-    thinking: Optional[ByteDanceThinkingOption] = Field(None)
+    thinking: Optional[ByteDanceThinkingOption] = Field(default=None)
 
     ## excluded parameters
-    n: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
+    tool_choice: Optional[Any] = Field(default=None, exclude=True)
 
 
 @RemoteLanguageModel.register("bytedance")
