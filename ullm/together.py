@@ -16,9 +16,9 @@ from .openai import (
 class TogetherAIRequestBody(OpenAIRequestBody):
     # reference: https://docs.together.ai/reference/chat-completions-1
     ## excluded parameters
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
     logprobs: Optional[conint(ge=0, le=20)] = None

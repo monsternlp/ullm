@@ -34,7 +34,7 @@ class OpenAISystemMessage(BaseModel):
 
 class OpenAIImageURL(BaseModel):
     url: str
-    detail: Optional[Literal["auto", "low", "high"]] = "auto"
+    detail: Optional[Literal["auto", "low", "high"]] = Field(default="auto")
 
 
 class OpenAIImagePart(BaseModel):
@@ -124,7 +124,7 @@ class OpenAIAssistantMessage(AssistantMessage):
 
 class OpenAIToolMessage(BaseModel):
     role: Literal["tool"] = "tool"
-    content: Optional[str] = "success"
+    content: Optional[str] = Field(default="success")
     tool_call_id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
 
     @classmethod
@@ -143,8 +143,8 @@ OpenAIChatMessage = Union[
 
 class OpenAIFunctionObject(BaseModel):
     name: str
-    description: Optional[str] = None
-    parameters: Optional[JsonSchemaObject] = None
+    description: Optional[str] = Field(default=None)
+    parameters: Optional[JsonSchemaObject] = Field(default=None)
 
     @classmethod
     def from_standard(cls, function: FunctionObject):
@@ -186,22 +186,22 @@ class OpenAIRequestBody(BaseModel):
     # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
     messages: conlist(OpenAIChatMessage, min_length=1)
     model: str
-    frequency_penalty: Optional[confloat(ge=-2.0, le=2.0)] = None
-    logit_bias: Optional[Dict[str, int]] = None
-    logprobs: Optional[bool] = None
-    top_logprobs: Optional[conint(ge=0, le=20)] = None
-    max_tokens: Optional[int] = None
-    n: Optional[conint(ge=1, le=128)] = 1
-    presence_penalty: Optional[confloat(ge=-2.0, le=2.0)] = None
-    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = None
-    seed: Optional[int] = None
-    stop: Optional[Union[str, List[str]]] = None
-    stream: Optional[bool] = False
-    temperature: Optional[confloat(ge=0.0, le=2.0)] = None
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = None
-    tools: Optional[List[OpenAITool]] = None
-    tool_choice: Optional[Union[Literal["auto", "none"], OpenAIToolChoice]] = None
-    user: Optional[str] = None
+    frequency_penalty: Optional[confloat(ge=-2.0, le=2.0)] = Field(default=None)
+    logit_bias: Optional[Dict[str, int]] = Field(default=None)
+    logprobs: Optional[bool] = Field(default=None)
+    top_logprobs: Optional[conint(ge=0, le=20)] = Field(default=None)
+    max_tokens: Optional[int] = Field(default=None)
+    n: Optional[conint(ge=1, le=128)] = Field(default=1)
+    presence_penalty: Optional[confloat(ge=-2.0, le=2.0)] = Field(default=None)
+    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(default=None)
+    seed: Optional[int] = Field(default=None)
+    stop: Optional[Union[str, List[str]]] = Field(default=None)
+    stream: Optional[bool] = Field(default=False)
+    temperature: Optional[confloat(ge=0.0, le=2.0)] = Field(default=None)
+    top_p: Optional[confloat(ge=0.0, le=1.0)] = Field(default=None)
+    tools: Optional[List[OpenAITool]] = Field(default=None)
+    tool_choice: Optional[Union[Literal["auto", "none"], OpenAIToolChoice]] = Field(default=None)
+    user: Optional[str] = Field(default=None)
 
 
 class OpenAIResponseChoice(BaseModel):
@@ -221,9 +221,9 @@ class OpenAIResponseBody(BaseModel):
     choices: conlist(OpenAIResponseChoice, min_length=1)
     created: int
     model: str
-    system_fingerprint: Optional[str] = None
+    system_fingerprint: Optional[str] = Field(default=None)
     object: Literal["chat.completion"]
-    usage: Optional[OpenAIResponseUsage] = None
+    usage: Optional[OpenAIResponseUsage] = Field(default=None)
 
     def to_standard(self, model: str = None):
         tool_calls = None
@@ -400,7 +400,7 @@ class OpenAIModel(OpenAICompatibleModel):
 
 
 class AzureOpenAIRequestBody(OpenAIRequestBody):
-    model: Optional[str] = Field(None, exclude=True)
+    model: Optional[str] = Field(default=None, exclude=True)
 
 
 @RemoteLanguageModel.register("azure-openai")

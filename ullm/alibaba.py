@@ -18,13 +18,13 @@ class AlibabaRequestBody(OpenAIRequestBody):
     messages: conlist(OpenAIChatMessage, min_length=1)
 
     ## exclude fields
-    frequency_penalty: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    frequency_penalty: Optional[Any] = Field(default=None, exclude=True)
+    tool_choice: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## Alibaba-specific parameters
     stream_options: Optional[dict] = None
