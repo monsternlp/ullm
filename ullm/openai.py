@@ -49,7 +49,7 @@ class OpenAIUserMessage(BaseModel):
     @classmethod
     def from_standard(cls, user_message: UserMessage):
         if all(isinstance(part, TextPart) for part in user_message.content):
-            content = "\n".join([part.text for part in user_message.content])
+            content = "\n".join([part.text for part in user_message.content])  # type: ignore
             return cls(content=content)
 
         parts = []
@@ -93,6 +93,9 @@ class OpenAIToolCall(ToolCall):
         )
 
     def to_standard(self):
+        if not self.function:
+            raise ValueError("Function call is required for tool call conversion")
+
         return ToolCall(
             id=self.id,
             type=self.type,
@@ -230,7 +233,8 @@ class OpenAIResponseBody(BaseModel):
         if self.choices[0].message.tool_calls:
             tool_calls = []
             for tool_call in self.choices[0].message.tool_calls:
-                tool_calls.append(tool_call.to_standard())
+                if tool_call:
+                    tool_calls.append(tool_call.to_standard())
 
         return GenerationResult(
             model=model or self.model,
@@ -238,9 +242,9 @@ class OpenAIResponseBody(BaseModel):
             content=self.choices[0].message.content,
             reasoning_content=self.choices[0].message.reasoning_content,
             tool_calls=tool_calls,
-            input_tokens=self.usage.prompt_tokens,
-            output_tokens=self.usage.completion_tokens,
-            total_tokens=self.usage.total_tokens,
+            input_tokens=getattr(self.usage, "prompt_tokens", None),
+            output_tokens=getattr(self.usage, "completion_tokens", None),
+            total_tokens=getattr(self.usage, "total_tokens", None),
         )
 
 
@@ -291,7 +295,7 @@ class OpenAICompatibleModel(HttpServiceModel):
         if tools and tool_choice is not None:
             openai_tool_choice = tool_choice.mode
             if openai_tool_choice == "any":
-                if len(tool_choice.functions) == 1:
+                if tool_choice.functions and len(tool_choice.functions) == 1:
                     openai_tool_choice = OpenAIToolChoice(
                         type="function", function={"name": tool_choice.functions[0]}
                     )

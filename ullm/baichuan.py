@@ -41,7 +41,7 @@ class BaichuanChatMessage(BaseModel):
                 for tool_call in message.tool_calls:
                     tool_calls.append(OpenAIToolCall.from_standard(tool_call))
 
-            return cls(role="assistant", content=content.strip(), tool_calls=tool_calls)
+            return cls(role='assistant', content=(content or '').strip(), tool_calls=tool_calls)
 
         if isinstance(message, UserMessage):
             content = ""

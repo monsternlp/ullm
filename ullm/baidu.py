@@ -62,7 +62,7 @@ class BaiduResponseUsage(BaseModel):
 
 class BaiduResponseBody(OpenAIResponseBody):
     search_results: Optional[BaiduSearchResult] = None
-    usage: BaiduResponseUsage
+    usage: BaiduResponseUsage  # type: ignore
 
 
 @RemoteLanguageModel.register("baidu")
