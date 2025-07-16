@@ -71,11 +71,19 @@ class AnthropicChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: Union[
         str,
-        Annotated[List[Union[
-                AnthropicTextPart, AnthropicImagePart, AnthropicToolUsePart, AnthropicToolResultPart
-            ]], Field(
-            min_length=1,
-        )],
+        Annotated[
+            List[
+                Union[
+                    AnthropicTextPart,
+                    AnthropicImagePart,
+                    AnthropicToolUsePart,
+                    AnthropicToolResultPart,
+                ]
+            ],
+            Field(
+                min_length=1,
+            ),
+        ],
     ]
 
     @classmethod

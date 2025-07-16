@@ -11,6 +11,7 @@ import jsonschema
 import magic
 import requests
 from deepmerge import always_merger
+from jsonschema.exceptions import SchemaError
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -28,7 +29,6 @@ from pydantic import (
     model_validator,
     validate_call,
 )
-from jsonschema.exceptions import SchemaError
 
 
 class TextPart(BaseModel):
@@ -300,8 +300,7 @@ class RemoteLanguageModelConfig(ModelConfig):
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_key: Optional[SecretStr] = Field(
-        default=SecretStr(""),
-        examples=["sk-************************************************"]
+        default=SecretStr(""), examples=["sk-************************************************"]
     )
     secret_key: Optional[SecretStr] = Field(
         default=SecretStr(""),
@@ -349,8 +348,7 @@ class RemoteLanguageModelConfig(ModelConfig):
     max_input_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 2048])
     max_output_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 4096])
     temperature: Optional[NonNegativeFloat] = Field(default=None, examples=[0.7, 0.8])
-    top_p: Optional[NonNegativeFloat] = Field(
-        default=None,le=1.0, examples=[1.0])
+    top_p: Optional[NonNegativeFloat] = Field(default=None, le=1.0, examples=[1.0])
     top_k: Optional[NonNegativeInt] = Field(default=None, examples=[50, 100])
     stop_sequences: Optional[List[str]] = Field(default=None, examples=[["stop1", "stop2"]])
     http_proxy: Optional[HttpUrl] = Field(default=None, examples=["https://example-proxy.com"])
@@ -523,7 +521,7 @@ class RemoteLanguageModel(LanguageModel):
             raise ValueError(f"Unsupported model: {self.model}")
 
         original_config = self.config.model_dump(exclude_unset=True)
-        for field in (self.META.required_config_fields or []):
+        for field in self.META.required_config_fields or []:
             if field not in original_config:
                 raise ValueError(f"config field missed: {field}")
 
@@ -538,7 +536,9 @@ class RemoteLanguageModel(LanguageModel):
 
     def _get_api_url(self):
         return (
-            self.META.api_url or self.config.api_url or (self.META.model_api_url_mappings or {}).get(self.model)
+            self.META.api_url
+            or self.config.api_url
+            or (self.META.model_api_url_mappings or {}).get(self.model)
         )
 
     @validate_call

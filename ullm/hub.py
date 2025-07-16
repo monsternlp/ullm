@@ -17,7 +17,9 @@ DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
 
 class HubConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ULLM_", env_file=".env", env_file_encoding="utf8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="ULLM_", env_file=".env", env_file_encoding="utf8", extra="ignore"
+    )
 
     HUB_BACKEND: Optional[Literal["redis", "rds"]] = None
     HUB_DB_URL: Optional[str] = None

@@ -44,7 +44,9 @@ class OpenAIImagePart(BaseModel):
 
 class OpenAIUserMessage(BaseModel):
     role: Literal["user"] = "user"
-    content: Union[str, Annotated[List[Union[OpenAITextPart, OpenAIImagePart]], Field(min_length=1)]]
+    content: Union[
+        str, Annotated[List[Union[OpenAITextPart, OpenAIImagePart]], Field(min_length=1)]
+    ]
 
     @classmethod
     def from_standard(cls, user_message: UserMessage):
@@ -196,7 +198,9 @@ class OpenAIRequestBody(BaseModel):
     max_tokens: Optional[int] = Field(default=None)
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
-    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(default=None)
+    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(
+        default=None
+    )
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
     stream: Optional[bool] = Field(default=False)

@@ -253,7 +253,9 @@ class GoogleGenerationConfig(BaseModel):
     candidate_count: Optional[PositiveInt] = Field(1, serialization_alias="candidateCount")
     max_output_tokens: Optional[PositiveInt] = Field(None, serialization_alias="maxOutputTokens")
     temperature: Optional[Annotated[float, Field(ge=0.0, le=2.0)]] = None
-    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = Field(None, serialization_alias="topP")
+    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
+        None, serialization_alias="topP"
+    )
     top_k: Optional[PositiveInt] = Field(None, serialization_alias="topK")
 
 

@@ -171,7 +171,7 @@ def register_model(model_hub_backend, model_hub_db_url, model_id, model_config_f
         model = LanguageModel.from_config(model_config)
 
     if not model_id:
-        model_id = f'{model_config["provider"]}:{model_config["model"]}'
+        model_id = f"{model_config['provider']}:{model_config['model']}"
         click.secho(
             f"Generate model id with provider and model name: {model_id}", fg="yellow", bold=True
         )
