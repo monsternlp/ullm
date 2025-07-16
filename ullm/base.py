@@ -28,6 +28,7 @@ from pydantic import (
     model_validator,
     validate_call,
 )
+from jsonschema.exceptions import SchemaError
 
 
 class TextPart(BaseModel):
@@ -150,7 +151,7 @@ class JsonSchemaObject(BaseModel):
         try:
             jsonschema.Draft7Validator.check_schema(data)
             return data
-        except (ValueError, jsonschema.exceptions.SchemaError):
+        except (ValueError, SchemaError):
             raise ValueError("Not a valid json schema.")
 
 
@@ -426,7 +427,7 @@ class RemoteLanguageModel(LanguageModel):
     @classmethod
     @validate_call
     def _get_supported_models(cls) -> Annotated[List[str], Field(min_length=1)]:
-        return cls.META.language_models + cls.META.visual_language_models
+        return (cls.META.language_models or []) + (cls.META.visual_language_models or [])
 
     @classmethod
     def list_providers(cls):
@@ -522,7 +523,7 @@ class RemoteLanguageModel(LanguageModel):
             raise ValueError(f"Unsupported model: {self.model}")
 
         original_config = self.config.model_dump(exclude_unset=True)
-        for field in self.META.required_config_fields:
+        for field in (self.META.required_config_fields or []):
             if field not in original_config:
                 raise ValueError(f"config field missed: {field}")
 
@@ -537,7 +538,7 @@ class RemoteLanguageModel(LanguageModel):
 
     def _get_api_url(self):
         return (
-            self.META.api_url or self.config.api_url or self.META.model_api_url_mappings[self.model]
+            self.META.api_url or self.config.api_url or (self.META.model_api_url_mappings or {}).get(self.model)
         )
 
     @validate_call
@@ -640,7 +641,7 @@ class HttpServiceModel(RemoteLanguageModel):
 
         always_merger.merge(body, self._convert_generation_config(config, system=system))
         always_merger.merge(body, self._convert_extra_generation_config(config.extra))
-        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(
+        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(  # type: ignore
             exclude_none=True, by_alias=True
         )
 
@@ -661,10 +662,12 @@ class HttpServiceModel(RemoteLanguageModel):
         )
         return self._call_api(api_url, request_data)
 
-    def _is_valid_response(cls, http_response):
+    def _is_valid_response(self, http_response):
         return http_response.status_code == 200
 
     def _parse_response(self, http_response) -> GenerationResult:
+        if not self.RESPONSE_BODY_CLS:
+            raise ValueError("RESPONSE_BODY_CLS is not set for this service model")
         return self.RESPONSE_BODY_CLS.model_validate(http_response.json()).to_standard(
             model=self.model
         )

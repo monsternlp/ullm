@@ -137,9 +137,9 @@ class MiniMaxResponseBody(OpenAIResponseBody):
         return GenerationResult(
             model=model or self.model,
             stop_reason=self.choices[0].finish_reason,
-            content=self.choices[0].message.content,
-            tool_calls=self.choices[0].message.tool_calls,
-            total_tokens=self.usage.total_tokens,
+            content=getattr(self.choices[0].message, "content", None),
+            tool_calls=getattr(self.choices[0].message, "tool_calls", None),
+            total_tokens=getattr(self.usage, "total_tokens", None),
         )
 
 
