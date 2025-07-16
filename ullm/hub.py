@@ -7,7 +7,7 @@ from peewee import BooleanField, CharField, DateTimeField
 from peewee import Model as DatabaseModel
 from playhouse.db_url import connect
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from redis import StrictRedis
 
 from .base import LanguageModel, RemoteLanguageModel
@@ -17,11 +17,7 @@ DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
 
 class HubConfig(BaseSettings):
-    class Config:
-        env_prefix = "ULLM_"
-        env_file = ".env"
-        env_file_encoding = "utf8"
-        extra = "ignore"
+    model_config = SettingsConfigDict(env_prefix="ULLM_", env_file=".env", env_file_encoding="utf8", extra="ignore")
 
     HUB_BACKEND: Optional[Literal["redis", "rds"]] = None
     HUB_DB_URL: Optional[str] = None

@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, confloat, conint, conlist
+from pydantic import BaseModel, Field
 
 from .base import (
     GenerateConfig,
@@ -55,8 +55,8 @@ class OpenRouterRequestBody(OpenAIRequestBody):
     # reference: https://openrouter.ai/docs#requests
     # OpenAI 没有的参数
     prompt: Optional[str] = None
-    top_k: Optional[conint(ge=1)] = None
-    repetition_penalty: Optional[confloat(gt=0.0, le=2.0)] = None
+    top_k: Optional[Annotated[int, Field(ge=1)]] = None
+    repetition_penalty: Optional[Annotated[float, Field(gt=0.0, le=2.0)]] = None
     transforms: Optional[List[Literal["middle-out"]]] = None
     ## models routing
     provider: Optional[OpenRouterProviderSetting] = None
@@ -71,7 +71,7 @@ class OpenRouterResponseChoice(BaseModel):
 
 
 class OpenRouterResponseBody(OpenAIResponseBody):
-    choices: conlist(OpenRouterResponseChoice, min_length=1)
+    choices: Annotated[List[OpenRouterResponseChoice], Field(min_length=1)]
 
 
 @RemoteLanguageModel.register("openrouter")

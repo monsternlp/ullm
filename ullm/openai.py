@@ -1,9 +1,9 @@
 import base64
 import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, confloat, conint, conlist, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from .base import (
     AssistantMessage,
@@ -44,7 +44,7 @@ class OpenAIImagePart(BaseModel):
 
 class OpenAIUserMessage(BaseModel):
     role: Literal["user"] = "user"
-    content: Union[str, conlist(Union[OpenAITextPart, OpenAIImagePart], min_length=1)]
+    content: Union[str, Annotated[List[Union[OpenAITextPart, OpenAIImagePart]], Field(min_length=1)]]
 
     @classmethod
     def from_standard(cls, user_message: UserMessage):
@@ -184,21 +184,21 @@ class OpenAIRequestBody(BaseModel):
     # NOTE:
     # 1. gpt-4-vision 不能设置 logprobs/logit_bias/tools/tool_choice/response_format 几个参数
     # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
-    messages: conlist(OpenAIChatMessage, min_length=1)
+    messages: Annotated[List[OpenAIChatMessage], Field(min_length=1)]
     model: str
-    frequency_penalty: Optional[confloat(ge=-2.0, le=2.0)] = Field(default=None)
+    frequency_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
     logit_bias: Optional[Dict[str, int]] = Field(default=None)
     logprobs: Optional[bool] = Field(default=None)
-    top_logprobs: Optional[conint(ge=0, le=20)] = Field(default=None)
+    top_logprobs: Optional[Annotated[int, Field(ge=0, le=20)]] = Field(default=None)
     max_tokens: Optional[int] = Field(default=None)
-    n: Optional[conint(ge=1, le=128)] = Field(default=1)
-    presence_penalty: Optional[confloat(ge=-2.0, le=2.0)] = Field(default=None)
+    n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
+    presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
     response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
     stream: Optional[bool] = Field(default=False)
-    temperature: Optional[confloat(ge=0.0, le=2.0)] = Field(default=None)
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = Field(default=None)
+    temperature: Optional[Annotated[float, Field(ge=0.0, le=2.0)]] = Field(default=None)
+    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = Field(default=None)
     tools: Optional[List[OpenAITool]] = Field(default=None)
     tool_choice: Optional[Union[Literal["auto", "none"], OpenAIToolChoice]] = Field(default=None)
     user: Optional[str] = Field(default=None)
@@ -218,7 +218,7 @@ class OpenAIResponseUsage(BaseModel):
 
 class OpenAIResponseBody(BaseModel):
     id: str
-    choices: conlist(OpenAIResponseChoice, min_length=1)
+    choices: Annotated[List[OpenAIResponseChoice], Field(min_length=1)]
     created: int
     model: str
     system_fingerprint: Optional[str] = Field(default=None)
@@ -271,7 +271,7 @@ class OpenAICompatibleModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

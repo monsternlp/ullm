@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, conint, conlist, model_validator, validate_call
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
     AssistantMessage,
@@ -96,12 +96,12 @@ class BaichuanRequestBody(OpenAIRequestBody):
     user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    messages: conlist(BaichuanChatMessage, min_length=1)
+    messages: Annotated[List[BaichuanChatMessage], Field(min_length=1)]
     tools: Optional[List[BaichuanTool]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
 
     ## Baichuan-specific parameters
-    top_k: Optional[conint(ge=0, le=20)] = None
+    top_k: Optional[Annotated[int, Field(ge=0, le=20)]] = None
 
 
 class BaichuanResponseBody(OpenAIResponseBody):
@@ -166,7 +166,7 @@ class BaichuanModel(OpenAICompatibleModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

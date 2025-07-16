@@ -1,15 +1,12 @@
 import base64
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
 from pydantic import (
     BaseModel,
     Field,
     NonNegativeFloat,
     PositiveInt,
-    confloat,
-    conint,
-    conlist,
     validate_call,
 )
 
@@ -71,26 +68,26 @@ class OllamaChatMessage(BaseModel):
 
 class OllamaRequestOptions(BaseModel):
     # reference: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values
-    mirostat: Optional[conint(ge=0, le=2)] = None
+    mirostat: Optional[Annotated[int, Field(ge=0, le=2)]] = None
     mirostat_eta: Optional[NonNegativeFloat] = None
     mirostat_tau: Optional[NonNegativeFloat] = None
     num_ctx: Optional[PositiveInt] = None
-    repeat_last_n: Optional[conint(ge=-1)] = None
+    repeat_last_n: Optional[Annotated[int, Field(ge=-1)]] = None
     repeat_penalty: Optional[float] = None
-    temperature: Optional[confloat(ge=0.0, le=2.0)] = None
+    temperature: Optional[Annotated[float, Field(ge=0.0, le=2.0)]] = None
     seed: Optional[int] = None
     # NOTE: stop is a list based on this - https://github.com/ollama/ollama/pull/442
     stop: Optional[List[str]] = None
-    tfs_z: Optional[confloat(ge=1.0)] = None
+    tfs_z: Optional[Annotated[float, Field(ge=1.0)]] = None
     num_predict: Optional[PositiveInt] = None
     top_k: Optional[PositiveInt] = None
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = None
+    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
 
 
 class OllamaRequestBody(BaseModel):
     # reference: https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
     model: str
-    messages: conlist(OllamaChatMessage, min_length=1)
+    messages: Annotated[List[OllamaChatMessage], Field(min_length=1)]
     options: Optional[OllamaRequestOptions] = None
     response_format: Optional[Literal["json"]] = Field(None, alias="format")
     stream: Optional[bool] = False
@@ -101,7 +98,7 @@ class OllamaResponseBody(BaseModel):
     model: str
     created_at: datetime
     message: OllamaChatMessage
-    done: Optional[bool]
+    done: Optional[bool] = None
     load_duration: int
     eval_duration: int
     prompt_eval_duration: int
@@ -137,7 +134,7 @@ class OllamaModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

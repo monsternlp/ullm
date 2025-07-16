@@ -4,7 +4,7 @@ from abc import ABC, abstractclassmethod, abstractmethod
 from copy import deepcopy
 from itertools import chain
 from operator import itemgetter
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
 import jsonschema
@@ -23,7 +23,6 @@ from pydantic import (
     PositiveInt,
     SecretStr,
     ValidationError,
-    conlist,
     field_serializer,
     field_validator,
     model_validator,
@@ -62,7 +61,7 @@ class ImagePart(BaseModel):
 
 class UserMessage(BaseModel):
     role: Literal["user"] = "user"
-    content: conlist(Union[TextPart, ImagePart], min_length=1)
+    content: Annotated[List[Union[TextPart, ImagePart]], Field(min_length=1)]
 
     @model_validator(mode="before")
     def validate_content(cls, data):
@@ -248,7 +247,7 @@ class LanguageModel(ABC):
     @abstractmethod
     def chat(
         self,
-        messages: conlist(Union[UserMessage, AssistantMessage, ToolMessage], min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:
@@ -417,7 +416,7 @@ class RemoteLanguageModel(LanguageModel):
 
         return self.config.is_online_model
 
-    def _validate_model(self, messages: conlist(ChatMessage, min_length=1)):
+    def _validate_model(self, messages: Annotated[List[ChatMessage], Field(min_length=1)]):
         message_parts = chain.from_iterable(
             [message.content for message in messages if isinstance(message, UserMessage)]
         )
@@ -426,7 +425,7 @@ class RemoteLanguageModel(LanguageModel):
 
     @classmethod
     @validate_call
-    def _get_supported_models(cls) -> conlist(str, min_length=1):
+    def _get_supported_models(cls) -> Annotated[List[str], Field(min_length=1)]:
         return cls.META.language_models + cls.META.visual_language_models
 
     @classmethod
@@ -592,7 +591,7 @@ class HttpServiceModel(RemoteLanguageModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         # FIXME: model 不支持 tools 的时候，如果 messages 里有 ToolMessage
@@ -628,7 +627,7 @@ class HttpServiceModel(RemoteLanguageModel):
     @validate_call
     def _make_api_body(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: GenerateConfig,
         system: Optional[str] = None,
     ):
@@ -648,7 +647,7 @@ class HttpServiceModel(RemoteLanguageModel):
     @validate_call
     def chat(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:
