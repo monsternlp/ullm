@@ -117,7 +117,7 @@ class TencentChatMessage(BaseModel):
                     )
 
                 tool_names = [tool_call.function.name for tool_call in message.tool_calls]
-                content = f'Should call function(s): {",".join(tool_names)}'
+                content = f"Should call function(s): {','.join(tool_names)}"
             else:
                 content = message.content
 
@@ -178,13 +178,19 @@ class TencentRequestBody(BaseModel):
     stream_moderation: Optional[bool] = Field(default=None, serialization_alias="StreamModeration")
     top_p: Optional[float] = Field(default=None, serialization_alias="TopP")
     temperature: Optional[float] = Field(default=None, serialization_alias="Temperature")
-    enable_enhancement: Optional[bool] = Field(default=None, serialization_alias="EnableEnhancement")
+    enable_enhancement: Optional[bool] = Field(
+        default=None, serialization_alias="EnableEnhancement"
+    )
     tools: Optional[List[TencentTool]] = Field(default=None, serialization_alias="Tools")
-    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(default=None, serialization_alias="ToolChoice")
+    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(
+        default=None, serialization_alias="ToolChoice"
+    )
     custom_tool: Optional[TencentTool] = Field(default=None, serialization_alias="CustomTool")
     search_info: Optional[bool] = Field(default=None, serialization_alias="SearchInfo")
     citation: Optional[bool] = Field(default=None, serialization_alias="Citation")
-    enable_speed_search: Optional[bool] = Field(default=None, serialization_alias="EnableSpeedSearch")
+    enable_speed_search: Optional[bool] = Field(
+        default=None, serialization_alias="EnableSpeedSearch"
+    )
     enable_multi_media: Optional[bool] = Field(default=None, serialization_alias="EnableMultimedia")
     enable_deep_search: Optional[bool] = Field(default=None, serialization_alias="EnableDeepSearch")
     seed: Optional[int] = Field(default=None, serialization_alias="Seed")
