@@ -1,6 +1,6 @@
-from typing import Any, Optional
+from typing import Annotated, Any, List, Optional
 
-from pydantic import Field, conlist
+from pydantic import Field
 
 from .base import (
     RemoteLanguageModel,
@@ -34,7 +34,7 @@ class DeepSeekResponseChoice(OpenAIResponseChoice):
 
 
 class DeepSeekResponseBody(OpenAIResponseBody):
-    choices: conlist(DeepSeekResponseChoice, min_length=1)
+    choices: Annotated[List[DeepSeekResponseChoice], Field(min_length=1)]
 
     def to_standard(self, model: str = None):
         result = super().to_standard(model=model)

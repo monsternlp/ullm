@@ -1,9 +1,9 @@
 from enum import IntEnum
 from hashlib import md5
 from time import time
-from typing import Any, Dict, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, confloat, conint, conlist, validate_call
+from pydantic import BaseModel, Field, validate_call
 
 from .base import (
     AssistantMessage,
@@ -58,17 +58,17 @@ class SkyWorkChatMessage(BaseModel):
 
 class SkyWorkRequestParams(BaseModel):
     # https://model-platform.tiangong.cn/api-reference
-    generate_length: Optional[conint(ge=0, le=2048)] = None
-    top_p: Optional[confloat(ge=0.1, le=1.0)] = None
-    top_k: Optional[conint(ge=3, le=100)] = None
-    repetition_penalty: Optional[confloat(ge=0.5, le=2.0)] = None
-    length_penalty: Optional[confloat(ge=0.5, le=1.5)] = None
-    min_len: Optional[conint(ge=1, le=10)] = None
-    temperature: Optional[confloat(ge=0, le=1.0)] = None
+    generate_length: Optional[Annotated[int, Field(ge=0, le=2048)]] = None
+    top_p: Optional[Annotated[float, Field(ge=0.1, le=1.0)]] = None
+    top_k: Optional[Annotated[int, Field(ge=3, le=100)]] = None
+    repetition_penalty: Optional[Annotated[float, Field(ge=0.5, le=2.0)]] = None
+    length_penalty: Optional[Annotated[float, Field(ge=0.5, le=1.5)]] = None
+    min_len: Optional[Annotated[int, Field(ge=1, le=10)]] = None
+    temperature: Optional[Annotated[float, Field(ge=0, le=1.0)]] = None
 
 
 class SkyWorkRequestBody(BaseModel):
-    messages: conlist(SkyWorkChatMessage, min_length=1)
+    messages: Annotated[List[SkyWorkChatMessage], Field(min_length=1)]
     model: str
     param: Optional[SkyWorkRequestParams] = None
 
@@ -160,7 +160,7 @@ class SkyWorkModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

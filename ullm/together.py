@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import Field, PositiveInt, conint
+from pydantic import Field, PositiveInt
 
 from .base import (
     GenerateConfig,
@@ -21,7 +21,7 @@ class TogetherAIRequestBody(OpenAIRequestBody):
     user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    logprobs: Optional[conint(ge=0, le=20)] = None
+    logprobs: Optional[Annotated[int, Field(ge=0, le=20)]] = None
     stop: Optional[List[str]] = None
     response_format: Optional[Dict[Literal["type"], Literal["json_object"]]] = None
 

@@ -5,13 +5,12 @@ import json
 import sys
 from datetime import datetime
 from time import time
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    conlist,
     validate_call,
 )
 
@@ -331,7 +330,7 @@ class TencentModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(msg) for msg in messages]
@@ -447,7 +446,7 @@ class TencentModel(HttpServiceModel):
     @validate_call
     def chat(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:

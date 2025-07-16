@@ -1,9 +1,6 @@
-from typing import Any, Dict, Optional
+from typing import Annotated, Any, Dict, List, Optional
 
-from pydantic import (
-    Field,
-    conlist,
-)
+from pydantic import Field
 
 from .base import (
     GenerateConfig,
@@ -15,7 +12,7 @@ from .openai import OpenAIChatMessage, OpenAICompatibleModel, OpenAIRequestBody
 
 class AlibabaRequestBody(OpenAIRequestBody):
     # reference: https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api
-    messages: conlist(OpenAIChatMessage, min_length=1)
+    messages: Annotated[List[OpenAIChatMessage], Field(min_length=1)]
 
     ## exclude fields
     frequency_penalty: Optional[Any] = Field(default=None, exclude=True)

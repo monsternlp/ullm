@@ -1,12 +1,7 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from pydantic import (
-    BaseModel,
-    Field,
-    confloat,
-    conint,
-)
+from pydantic import BaseModel, Field
 
 from .base import (
     Citation,
@@ -41,12 +36,12 @@ class CohereRequestBody(OpenAIRequestBody):
     user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    frequency_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
-    presence_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
+    frequency_penalty: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
+    presence_penalty: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
 
     ## cohere specific parameters
-    k: Optional[conint(ge=0, le=500)] = None
-    p: Optional[confloat(ge=0.01, le=0.99)] = None
+    k: Optional[Annotated[int, Field(ge=0, le=500)]] = None
+    p: Optional[Annotated[float, Field(ge=0.01, le=0.99)]] = None
     documents: Optional[List[CohereDocument]] = None
     citation_options: Optional[Dict[Literal["mode"], Literal["ACCURATE", "FAST", "OFF"]]] = None
     safety_mode: Optional[Literal["CONTEXTUAL", "STRICT", "OFF"]] = None

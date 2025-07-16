@@ -1,11 +1,9 @@
 import base64
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
     Field,
-    confloat,
-    conlist,
     model_validator,
     validate_call,
 )
@@ -108,10 +106,10 @@ class ZhipuAIRequestBody(OpenAIRequestBody):
     user: Optional[str] = Field(None, exclude=True)
 
     ## different parameters
-    messages: conlist(ZhipuChatMessage, min_length=1)
-    temperature: Optional[confloat(gt=0.0, lt=1.0)] = None
-    top_p: Optional[confloat(gt=0.0, lt=1.0)] = None
-    stop: Optional[List[str]]
+    messages: Annotated[List[ZhipuChatMessage], Field(min_length=1)]
+    temperature: Optional[Annotated[float, Field(gt=0.0, lt=1.0)]] = None
+    top_p: Optional[Annotated[float, Field(gt=0.0, lt=1.0)]] = None
+    stop: Optional[List[str]] = None
     tools: Optional[List[ZhipuAITool]] = None
     tool_choice: Optional[Literal["auto"]] = "auto"
 

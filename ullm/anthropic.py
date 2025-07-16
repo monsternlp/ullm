@@ -1,7 +1,7 @@
 import base64
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, confloat, conlist, model_validator, validate_call
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
     AssistantMessage,
@@ -71,12 +71,11 @@ class AnthropicChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: Union[
         str,
-        conlist(
-            Union[
+        Annotated[List[Union[
                 AnthropicTextPart, AnthropicImagePart, AnthropicToolUsePart, AnthropicToolResultPart
-            ],
+            ]], Field(
             min_length=1,
-        ),
+        )],
     ]
 
     @classmethod
@@ -158,17 +157,17 @@ class AnthropicRequestMeta(BaseModel):
 
 class AnthropicRequestBody(BaseModel):
     model: str
-    messages: conlist(AnthropicChatMessage, min_length=1)
+    messages: Annotated[List[AnthropicChatMessage], Field(min_length=1)]
     max_tokens: Optional[int] = None
     metadata: Optional[AnthropicRequestMeta] = None
     stop_sequences: Optional[List[str]] = None
     stream: Optional[bool] = None
     system: Optional[str] = None
-    temperature: Optional[confloat(ge=0.0, le=1.0)] = None
+    temperature: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
     tool_choice: Optional[AnthropicToolChoice] = None
     tools: Optional[List[AnthropicTool]] = None
     top_k: Optional[PositiveInt] = None
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = None
+    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
 
     @model_validator(mode="after")
     def check_messages(self):
@@ -261,7 +260,7 @@ class AnthropicModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

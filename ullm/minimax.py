@@ -1,7 +1,7 @@
 import json
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, confloat, conlist, model_validator, validate_call
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
     FunctionObject,
@@ -76,8 +76,8 @@ class MiniMaxRequestBody(OpenAIRequestBody):
     user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    temperature: Optional[confloat(gt=0.0, le=1.0)] = None
-    top_p: Optional[confloat(gt=0.0, le=1.0)] = None
+    temperature: Optional[Annotated[float, Field(gt=0.0, le=1.0)]] = None
+    top_p: Optional[Annotated[float, Field(gt=0.0, le=1.0)]] = None
     tools: Optional[List[MiniMaxTool]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
 
@@ -113,7 +113,7 @@ class MiniMaxResponseChoice(OpenAIResponseChoice):
 
 
 class MiniMaxResponseBody(OpenAIResponseBody):
-    choices: conlist(MiniMaxResponseChoice, min_length=1)
+    choices: Annotated[List[MiniMaxResponseChoice], Field(min_length=1)]
     usage: Optional[MiniMaxResponseUsage] = None
     input_sensitive: bool
     input_sensitive_type: Optional[int] = Field(

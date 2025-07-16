@@ -1,6 +1,6 @@
-from typing import Any, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
-from pydantic import Field, conint
+from pydantic import Field
 
 from .base import (
     RemoteLanguageModel,
@@ -22,7 +22,7 @@ class PerplexityRequestBody(OpenAIRequestBody):
     response_format: Optional[Any] = Field(default=None, exclude=True)
     n: Optional[Any] = Field(default=None, exclude=True)
     ## Perplexity-specific parameters
-    top_k: Optional[conint(ge=0, lt=2048)] = None
+    top_k: Optional[Annotated[int, Field(ge=0, lt=2048)]] = None
     search_domain_filter: Optional[list] = None
     return_images: Optional[bool] = None
     return_related_questions: Optional[bool] = None

@@ -1,11 +1,6 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Annotated, Any, Dict, Literal, Optional
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    Field,
-    confloat,
-)
+from pydantic import AnyUrl, BaseModel, Field
 
 from .base import GenerateConfig, JsonSchemaObject, RemoteLanguageModel, RemoteLanguageModelMetaInfo
 from .openai import OpenAICompatibleModel, OpenAIRequestBody, OpenAIResponseBody
@@ -40,7 +35,7 @@ class BaiduRequestBody(OpenAIRequestBody):
 
     ## baidu-specified parameters
     stream_options: Optional[BaiduStreamOptions] = None
-    penalty_score: Optional[confloat(ge=1.0, le=2.0)] = None
+    penalty_score: Optional[Annotated[float, Field(ge=1.0, le=2.0)]] = None
     max_completion_tokens: Optional[int] = None
     parallel_tool_calls: Optional[bool] = None
     web_search: Optional[BaiduWebSearchOptions] = None
