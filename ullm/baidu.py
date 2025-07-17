@@ -1,14 +1,11 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Annotated, Any, Dict, Literal, Optional
 
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    Field,
-    confloat,
-)
+from pydantic import AnyUrl, BaseModel, Field
 
-from .base import GenerateConfig, JsonSchemaObject, RemoteLanguageModel, RemoteLanguageModelMetaInfo
-from .openai import OpenAICompatibleModel, OpenAIRequestBody, OpenAIResponseBody
+from .base import RemoteLanguageModel, RemoteLanguageModelMetaInfo
+from .openai import OpenAICompatibleModel
+from .openai_types import OpenAIRequestBody, OpenAIResponseBody
+from .types import GenerateConfig, JsonSchemaObject
 
 
 class BaiduStreamOptions(BaseModel):
@@ -29,18 +26,18 @@ class BaiduWebSearchOptions(BaseModel):
 class BaiduRequestBody(OpenAIRequestBody):
     # reference: https://platform.moonshot.cn/docs/api/chat
     ## excluded parameters
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    max_tokens: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    max_tokens: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
     response_format: Optional[BaiduResponseFormat] = None
 
     ## baidu-specified parameters
     stream_options: Optional[BaiduStreamOptions] = None
-    penalty_score: Optional[confloat(ge=1.0, le=2.0)] = None
+    penalty_score: Optional[Annotated[float, Field(ge=1.0, le=2.0)]] = None
     max_completion_tokens: Optional[int] = None
     parallel_tool_calls: Optional[bool] = None
     web_search: Optional[BaiduWebSearchOptions] = None
@@ -67,7 +64,7 @@ class BaiduResponseUsage(BaseModel):
 
 class BaiduResponseBody(OpenAIResponseBody):
     search_results: Optional[BaiduSearchResult] = None
-    usage: BaiduResponseUsage
+    usage: BaiduResponseUsage  # type: ignore
 
 
 @RemoteLanguageModel.register("baidu")

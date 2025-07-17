@@ -1,22 +1,24 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
 from pydantic import (
     BaseModel,
+    Field,
     NonNegativeFloat,
     PositiveInt,
-    conlist,
     model_validator,
     validate_call,
 )
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     ToolMessage,
     UserMessage,
@@ -65,7 +67,7 @@ class CloudflareRequestBody(BaseModel):
     lora: Optional[str] = None
     max_tokens: Optional[PositiveInt] = None
     prompt: Optional[str] = None
-    messages: Optional[conlist(CloudflareChatMessage, min_length=1)] = None
+    messages: Optional[Annotated[List[CloudflareChatMessage], Field(min_length=1)]] = None
     raw: Optional[bool] = None
     stream: Optional[bool] = None
     temperature: Optional[NonNegativeFloat] = None
@@ -165,7 +167,7 @@ class CloudflareModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

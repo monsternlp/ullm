@@ -1,23 +1,25 @@
 import json
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, confloat, conlist, model_validator, validate_call
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
-    FunctionObject,
-    GenerateConfig,
-    GenerationResult,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    Tool,
-    ToolChoice,
 )
-from .openai import (
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIAssistantMessage,
-    OpenAICompatibleModel,
     OpenAIRequestBody,
     OpenAIResponseBody,
     OpenAIResponseChoice,
+)
+from .types import (
+    FunctionObject,
+    GenerateConfig,
+    GenerationResult,
+    Tool,
+    ToolChoice,
 )
 
 
@@ -65,19 +67,19 @@ class MiniMaxTool(BaseModel):
 class MiniMaxRequestBody(OpenAIRequestBody):
     # https://www.minimaxi.com/document/guides/chat-model/V2?id=65e0736ab2845de20908e2dd
     ## excluded parameters
-    frequency_penalty: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    presence_penalty: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    frequency_penalty: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    presence_penalty: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    temperature: Optional[confloat(gt=0.0, le=1.0)] = None
-    top_p: Optional[confloat(gt=0.0, le=1.0)] = None
+    temperature: Optional[Annotated[float, Field(gt=0.0, le=1.0)]] = None
+    top_p: Optional[Annotated[float, Field(gt=0.0, le=1.0)]] = None
     tools: Optional[List[MiniMaxTool]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
 
@@ -113,7 +115,7 @@ class MiniMaxResponseChoice(OpenAIResponseChoice):
 
 
 class MiniMaxResponseBody(OpenAIResponseBody):
-    choices: conlist(MiniMaxResponseChoice, min_length=1)
+    choices: Annotated[List[MiniMaxResponseChoice], Field(min_length=1)]
     usage: Optional[MiniMaxResponseUsage] = None
     input_sensitive: bool
     input_sensitive_type: Optional[int] = Field(
@@ -137,9 +139,9 @@ class MiniMaxResponseBody(OpenAIResponseBody):
         return GenerationResult(
             model=model or self.model,
             stop_reason=self.choices[0].finish_reason,
-            content=self.choices[0].message.content,
-            tool_calls=self.choices[0].message.tool_calls,
-            total_tokens=self.usage.total_tokens,
+            content=getattr(self.choices[0].message, "content", None),
+            tool_calls=getattr(self.choices[0].message, "tool_calls", None),
+            total_tokens=getattr(self.usage, "total_tokens", None),
         )
 
 

@@ -1,30 +1,16 @@
 import base64
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import (
-    BaseModel,
-    Field,
-    confloat,
-    conlist,
-    model_validator,
-    validate_call,
-)
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
-    ChatMessage,
-    GenerateConfig,
-    ImagePart,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    TextPart,
-    Tool,
-    ToolChoice,
-    UserMessage,
 )
-from .openai import (
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIAssistantMessage,
     OpenAIChatMessage,
-    OpenAICompatibleModel,
     OpenAIFunctionObject,
     OpenAIImagePart,
     OpenAIImageURL,
@@ -34,13 +20,22 @@ from .openai import (
     OpenAIToolMessage,
     OpenAIUserMessage,
 )
+from .types import (
+    ChatMessage,
+    GenerateConfig,
+    ImagePart,
+    TextPart,
+    Tool,
+    ToolChoice,
+    UserMessage,
+)
 
 
 class ZhipuUserMessage(OpenAIUserMessage):
     @classmethod
     def from_standard(cls, user_message: UserMessage):
         if all(isinstance(part, TextPart) for part in user_message.content):
-            content = "\n".join([part.text for part in user_message.content])
+            content = "\n".join([part.text for part in user_message.content])  # type: ignore
             return cls(content=content)
 
         parts = []
@@ -97,21 +92,21 @@ class ZhipuAITool(BaseModel):
 class ZhipuAIRequestBody(OpenAIRequestBody):
     # reference: https://open.bigmodel.cn/dev/api
     ## exclude fields
-    frequency_penalty: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(1, exclude=True)
-    presence_penalty: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[int] = Field(None, exclude=True)
-    user: Optional[str] = Field(None, exclude=True)
+    frequency_penalty: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=1, exclude=True)
+    presence_penalty: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[int] = Field(default=None, exclude=True)
+    user: Optional[str] = Field(default=None, exclude=True)
 
     ## different parameters
-    messages: conlist(ZhipuChatMessage, min_length=1)
-    temperature: Optional[confloat(gt=0.0, lt=1.0)] = None
-    top_p: Optional[confloat(gt=0.0, lt=1.0)] = None
-    stop: Optional[List[str]]
+    messages: Annotated[List[ZhipuChatMessage], Field(min_length=1)]
+    temperature: Optional[Annotated[float, Field(gt=0.0, lt=1.0)]] = None
+    top_p: Optional[Annotated[float, Field(gt=0.0, lt=1.0)]] = None
+    stop: Optional[List[str]] = None
     tools: Optional[List[ZhipuAITool]] = None
     tool_choice: Optional[Literal["auto"]] = "auto"
 
@@ -122,8 +117,8 @@ class ZhipuAIRequestBody(OpenAIRequestBody):
 
 
 class ZhipuAIResponseBody(OpenAIResponseBody):
-    system_fingerprint: Optional[str] = Field(None, exclude=True)
-    object: Optional[Literal["chat.completion"]] = Field(None, exclude=True)
+    system_fingerprint: Optional[str] = Field(default=None, exclude=True)
+    object: Optional[Literal["chat.completion"]] = Field(default=None, exclude=True)
 
 
 @RemoteLanguageModel.register("zhipu")

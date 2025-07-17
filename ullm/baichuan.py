@@ -1,25 +1,27 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, conint, conlist, model_validator, validate_call
+from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIFunctionObject,
+    OpenAIRequestBody,
+    OpenAIResponseBody,
+    OpenAIToolCall,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolChoice,
     ToolMessage,
     UserMessage,
-)
-from .openai import (
-    OpenAICompatibleModel,
-    OpenAIFunctionObject,
-    OpenAIRequestBody,
-    OpenAIResponseBody,
-    OpenAIToolCall,
 )
 
 
@@ -41,7 +43,7 @@ class BaichuanChatMessage(BaseModel):
                 for tool_call in message.tool_calls:
                     tool_calls.append(OpenAIToolCall.from_standard(tool_call))
 
-            return cls(role="assistant", content=content.strip(), tool_calls=tool_calls)
+            return cls(role="assistant", content=(content or "").strip(), tool_calls=tool_calls)
 
         if isinstance(message, UserMessage):
             content = ""
@@ -84,24 +86,24 @@ class BaichuanTool(BaseModel):
 class BaichuanRequestBody(OpenAIRequestBody):
     # reference: https://platform.baichuan-ai.com/docs/api#12
     ## excluded parameters
-    frequency_penalty: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    presence_penalty: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    stop: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    frequency_penalty: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    presence_penalty: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    stop: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    messages: conlist(BaichuanChatMessage, min_length=1)
+    messages: Annotated[List[BaichuanChatMessage], Field(min_length=1)]
     tools: Optional[List[BaichuanTool]] = None
     tool_choice: Optional[Literal["auto", "none"]] = None
 
     ## Baichuan-specific parameters
-    top_k: Optional[conint(ge=0, le=20)] = None
+    top_k: Optional[Annotated[int, Field(ge=0, le=20)]] = None
 
 
 class BaichuanResponseBody(OpenAIResponseBody):
@@ -166,7 +168,7 @@ class BaichuanModel(OpenAICompatibleModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]

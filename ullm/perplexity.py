@@ -1,28 +1,31 @@
-from typing import Any, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
-from pydantic import Field, conint
+from pydantic import Field
 
 from .base import (
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import OpenAICompatibleModel, OpenAIRequestBody
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIRequestBody,
+)
 
 
 class PerplexityRequestBody(OpenAIRequestBody):
     # reference: https://docs.perplexity.ai/api-reference/chat-completions
     ## excluded parameters
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    tools: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
-    response_format: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    tools: Optional[Any] = Field(default=None, exclude=True)
+    tool_choice: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
+    response_format: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
     ## Perplexity-specific parameters
-    top_k: Optional[conint(ge=0, lt=2048)] = None
+    top_k: Optional[Annotated[int, Field(ge=0, lt=2048)]] = None
     search_domain_filter: Optional[list] = None
     return_images: Optional[bool] = None
     return_related_questions: Optional[bool] = None

@@ -1,25 +1,22 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
-from pydantic import (
-    BaseModel,
-    Field,
-    confloat,
-    conint,
-)
+from pydantic import BaseModel, Field
 
 from .base import (
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIRequestBody,
+    OpenAIToolCall,
+)
+from .types import (
     Citation,
     GenerateConfig,
     GenerationResult,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
-)
-from .openai import (
-    OpenAICompatibleModel,
-    OpenAIRequestBody,
-    OpenAIToolCall,
 )
 
 
@@ -31,22 +28,22 @@ class CohereDocument(BaseModel):
 class CohereRequestBody(OpenAIRequestBody):
     # reference: https://docs.cohere.com/v2/reference/chat
     ## excluded parameters
-    stop: Optional[Any] = Field(None, exclude=True)
-    top_p: Optional[Any] = Field(None, exclude=True)
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    logprobs: Optional[Any] = Field(None, exclude=True)
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    tool_choice: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    stop: Optional[Any] = Field(default=None, exclude=True)
+    top_p: Optional[Any] = Field(default=None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    logprobs: Optional[Any] = Field(default=None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    tool_choice: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    frequency_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
-    presence_penalty: Optional[confloat(ge=0.0, le=1.0)] = None
+    frequency_penalty: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
+    presence_penalty: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
 
     ## cohere specific parameters
-    k: Optional[conint(ge=0, le=500)] = None
-    p: Optional[confloat(ge=0.01, le=0.99)] = None
+    k: Optional[Annotated[int, Field(ge=0, le=500)]] = None
+    p: Optional[Annotated[float, Field(ge=0.01, le=0.99)]] = None
     documents: Optional[List[CohereDocument]] = None
     citation_options: Optional[Dict[Literal["mode"], Literal["ACCURATE", "FAST", "OFF"]]] = None
     safety_mode: Optional[Literal["CONTEXTUAL", "STRICT", "OFF"]] = None

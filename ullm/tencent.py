@@ -1,30 +1,27 @@
 import base64
+import datetime
 import hashlib
 import hmac
 import json
 import sys
-from datetime import datetime
-from time import time
-from typing import Any, Dict, List, Literal, Optional
+import time
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    conlist,
-    validate_call,
-)
+from pydantic import BaseModel, ConfigDict, Field, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .types import (
     AssistantMessage,
     ChatMessage,
     FunctionObject,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     ImagePart,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolCall,
@@ -32,7 +29,6 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
-from .openai import OpenAICompatibleModel
 
 
 class TencentImageURL(BaseModel):
@@ -118,7 +114,7 @@ class TencentChatMessage(BaseModel):
                     )
 
                 tool_names = [tool_call.function.name for tool_call in message.tool_calls]
-                content = f'Should call function(s): {",".join(tool_names)}'
+                content = f"Should call function(s): {','.join(tool_names)}"
             else:
                 content = message.content
 
@@ -175,22 +171,26 @@ class TencentTool(BaseModel):
 class TencentRequestBody(BaseModel):
     model: str = Field(..., serialization_alias="Model")
     messages: List[TencentChatMessage] = Field(..., serialization_alias="Messages")
-    stream: Optional[bool] = Field(None, serialization_alias="Stream")
-    stream_moderation: Optional[bool] = Field(None, serialization_alias="StreamModeration")
-    top_p: Optional[float] = Field(None, serialization_alias="TopP")
-    temperature: Optional[float] = Field(None, serialization_alias="Temperature")
-    enable_enhancement: Optional[bool] = Field(None, serialization_alias="EnableEnhancement")
-    tools: Optional[List[TencentTool]] = Field(None, serialization_alias="Tools")
-    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(
-        None, serialization_alias="ToolChoice"
+    stream: Optional[bool] = Field(default=None, serialization_alias="Stream")
+    stream_moderation: Optional[bool] = Field(default=None, serialization_alias="StreamModeration")
+    top_p: Optional[float] = Field(default=None, serialization_alias="TopP")
+    temperature: Optional[float] = Field(default=None, serialization_alias="Temperature")
+    enable_enhancement: Optional[bool] = Field(
+        default=None, serialization_alias="EnableEnhancement"
     )
-    custom_tool: Optional[TencentTool] = Field(None, serialization_alias="CustomTool")
-    search_info: Optional[bool] = Field(None, serialization_alias="SearchInfo")
-    citation: Optional[bool] = Field(None, serialization_alias="Citation")
-    enable_speed_search: Optional[bool] = Field(None, serialization_alias="EnableSpeedSearch")
-    enable_multi_media: Optional[bool] = Field(None, serialization_alias="EnableMultimedia")
-    enable_deep_search: Optional[bool] = Field(None, serialization_alias="EnableDeepSearch")
-    seed: Optional[int] = Field(None, serialization_alias="Seed")
+    tools: Optional[List[TencentTool]] = Field(default=None, serialization_alias="Tools")
+    tool_choice: Optional[Literal["none", "auto", "custom"]] = Field(
+        default=None, serialization_alias="ToolChoice"
+    )
+    custom_tool: Optional[TencentTool] = Field(default=None, serialization_alias="CustomTool")
+    search_info: Optional[bool] = Field(default=None, serialization_alias="SearchInfo")
+    citation: Optional[bool] = Field(default=None, serialization_alias="Citation")
+    enable_speed_search: Optional[bool] = Field(
+        default=None, serialization_alias="EnableSpeedSearch"
+    )
+    enable_multi_media: Optional[bool] = Field(default=None, serialization_alias="EnableMultimedia")
+    enable_deep_search: Optional[bool] = Field(default=None, serialization_alias="EnableDeepSearch")
+    seed: Optional[int] = Field(default=None, serialization_alias="Seed")
 
 
 class TencentUsage(BaseModel):
@@ -333,7 +333,7 @@ class TencentModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(msg) for msg in messages]
@@ -449,7 +449,7 @@ class TencentModel(HttpServiceModel):
     @validate_call
     def chat(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:

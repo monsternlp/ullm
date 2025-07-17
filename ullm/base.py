@@ -1,14 +1,9 @@
-import mimetypes
 import random
 from abc import ABC, abstractclassmethod, abstractmethod
-from copy import deepcopy
 from itertools import chain
 from operator import itemgetter
-from typing import Any, Dict, List, Literal, Optional, Union
-from uuid import uuid4
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Literal, Optional, Union
 
-import jsonschema
-import magic
 import requests
 from deepmerge import always_merger
 from pydantic import (
@@ -17,210 +12,28 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
-    Json,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
     ValidationError,
-    conlist,
     field_serializer,
     field_validator,
-    model_validator,
     validate_call,
 )
 
+from .types import (
+    ChatMessage,
+    GenerateConfig,
+    GenerationResult,
+    ImagePart,
+    Tool,
+    ToolChoice,
+    UserMessage,
+)
 
-class TextPart(BaseModel):
-    type: Literal["text"] = "text"
-    text: str
-
-
-class ImagePart(BaseModel):
-    type: Literal["image"] = "image"
-    url: Optional[HttpUrl] = None
-    path: Optional[str] = None
-    mime_type: Optional[str] = None
-    data: Optional[bytes] = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def check_image_data(cls, data):
-        data = deepcopy(data)
-        assert data.get("url") or data.get("path") or data.get("data")
-        if data.get("path"):
-            with open(data["path"], "rb") as image_file:
-                data["data"] = image_file.read()
-
-        if data.get("data"):
-            data["mime_type"] = magic.from_buffer(data["data"], mime=True)
-        else:
-            data["mime_type"], _ = mimetypes.guess_type(data["url"])
-
-        return data
-
-
-class UserMessage(BaseModel):
-    role: Literal["user"] = "user"
-    content: conlist(Union[TextPart, ImagePart], min_length=1)
-
-    @model_validator(mode="before")
-    def validate_content(cls, data):
-        data = deepcopy(data)
-        if isinstance(data, dict) and isinstance(data.get("content"), str):
-            data["content"] = [TextPart(text=data["content"])]
-
-        return data
-
-
-class FunctionCall(BaseModel):
-    name: str
-    arguments: Optional[Union[Json, Dict[str, Any]]] = {}
-
-
-class ToolCall(BaseModel):
-    id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
-    type: str
-    function: Optional[FunctionCall] = None
-
-    @model_validator(mode="after")
-    def check_tool(self):
-        if self.type == "function" and not self.function:
-            raise ValueError("`function` should not be empty!")
-
-        return self
-
-
-class CitationSource(BaseModel):
-    id: Optional[str] = None
-    type: Literal["tool", "document"]
-    tool_output: Optional[dict] = None
-    document: Optional[dict] = None
-
-    @model_validator(mode="before")
-    def check_type(cls, values):
-        if values["type"] == "tool":
-            assert values.get("tool_output")
-
-        if values["type"] == "document":
-            assert values.get("document")
-
-        return values
-
-
-class Citation(BaseModel):
-    start: Optional[int] = None
-    end: Optional[int] = None
-    text: Optional[str] = None
-    sources: Optional[List[CitationSource]] = None
-
-
-class AssistantMessage(BaseModel):
-    role: Literal["assistant"] = "assistant"
-    content: Optional[str] = ""
-    reasoning_content: Optional[str] = None
-    tool_calls: Optional[List[ToolCall]] = None
-    citations: Optional[List[Citation]] = None
-
-    @model_validator(mode="after")
-    def check_content_or_tool_calls(self):
-        assert self.content or self.tool_calls
-        return self
-
-
-class ToolMessage(BaseModel):
-    role: Literal["tool"] = "tool"
-    tool_call_id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
-    tool_name: str
-    tool_result: str
-
-
-ChatMessage = Union[UserMessage, AssistantMessage, ToolMessage]
-
-
-class JsonSchemaObject(BaseModel):
-    # https://spec.openapis.org/oas/v3.0.3#schema
-    # https://ai.google.dev/api/rest/v1beta/Tool#Schema
-    type: Literal["object"]
-    properties: Optional[Dict[str, Any]] = {}
-    required: Optional[List[str]] = []
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_json_schema(cls, data):
-        try:
-            jsonschema.Draft7Validator.check_schema(data)
-            return data
-        except (ValueError, jsonschema.exceptions.SchemaError):
-            raise ValueError("Not a valid json schema.")
-
-
-class ParameterDefinition(BaseModel):
-    type: str
-    name: str
-    description: str
-    required: Optional[bool] = True
-
-
-class FunctionObject(BaseModel):
-    name: str
-    description: str
-    arguments: Optional[List[ParameterDefinition]] = []
-    returns: Optional[List[ParameterDefinition]] = []
-
-
-class Tool(BaseModel):
-    type: Literal["function"] = "function"
-    function: FunctionObject
-
-
-class ToolChoice(BaseModel):
-    # none: 不使用工具
-    # auto: 模型自己判断
-    # any: 从给定的工具中任选一个，如果不给定则从所有工具里选
-    mode: Literal["none", "auto", "any"]
-    functions: Optional[List[str]] = []
-
-
-class GenerateConfig(BaseModel):
-    temperature: Optional[NonNegativeFloat] = None
-    max_tokens: Optional[PositiveInt] = None
-    max_input_tokens: Optional[PositiveInt] = None
-    max_output_tokens: Optional[PositiveInt] = None
-    top_p: Optional[NonNegativeFloat] = None
-    top_k: Optional[NonNegativeInt] = None
-    stop_sequences: Optional[List[str]] = None
-    frequency_penalty: Optional[float] = None
-    presence_penalty: Optional[float] = None
-    repetition_penalty: Optional[float] = None
-    response_format: Optional[Literal["text", "json_object"]] = "text"
-    tools: Optional[List[Tool]] = None
-    tool_choice: Optional[ToolChoice] = None
-    extra: Optional[dict] = None
-    thinking_type: Optional[Literal["disabled", "enabled", "auto"]] = None
-
-
-class GenerationResult(BaseModel):
-    model: str
-    stop_reason: str
-    content: Optional[str] = ""
-    reasoning_content: Optional[str] = ""
-    tool_calls: Optional[List[ToolCall]] = None
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    total_tokens: Optional[int] = None
-    original_result: Json[Any] = None
-    citations: Optional[List[Citation]] = None
-
-    @model_validator(mode="after")
-    def check_content_or_tool_calls(self):
-        assert self.content or self.tool_calls
-        return self
-
-    def to_message(self) -> AssistantMessage:
-        return AssistantMessage(
-            content=self.content, tool_calls=self.tool_calls, citations=self.citations
-        )
+if TYPE_CHECKING:
+    pass
 
 
 class LanguageModel(ABC):
@@ -248,7 +61,7 @@ class LanguageModel(ABC):
     @abstractmethod
     def chat(
         self,
-        messages: conlist(Union[UserMessage, AssistantMessage, ToolMessage], min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:
@@ -276,84 +89,84 @@ class RemoteLanguageModelConfig(ModelConfig):
     provider: str = Field(..., description="模型提供方名称")
     model: str = Field(..., description="模型名称")
     is_visual_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="该模型是否支持视觉理解，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_tool_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="是否支持工具，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     is_online_model: Optional[bool] = Field(
-        False,
+        default=False,
         description="是否支持联网，用于自定义服务",
         examples=[True, False],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_url: Optional[HttpUrl] = Field(
-        None,
+        default=None,
         description="有的 provider 并无公开的固定 URL 需要自己指定，如自己部署的 API 代理服务",
         examples=["http://example.com/api/v1/chat/completion"],
         json_schema_extra={"providers": ["openai-compatible"]},
     )
     api_key: Optional[SecretStr] = Field(
-        "", examples=["sk-************************************************"]
+        default=SecretStr(""), examples=["sk-************************************************"]
     )
     secret_key: Optional[SecretStr] = Field(
-        "",
+        default=SecretStr(""),
         description="讯飞星火 api_secret, 文心一言 secret key，腾讯混元 secret_key",
         examples=["c5ff5142b0b248d5885bac25352364eb"],
         json_schema_extra={"providers": ["iflytek", "baidu"]},
     )
     azure_endpoint: Optional[str] = Field(
-        "",
+        default="",
         description="用于 Azure OpenAI",
         examples=["https://example-endpoint.openai.azure.com/"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_deployment_name: Optional[str] = Field(
-        "",
+        default="",
         description="用于 Azure OpenAI",
         examples=["gpt-35-turbo"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     azure_api_version: Optional[str] = Field(
-        "2024-02-01",
+        default="2024-02-01",
         description="用于 Azure OpenAI",
         examples=["2024-02-01"],
         json_schema_extra={"providers": ["azure-openai"]},
     )
     bytedance_endpoint: Optional[str] = Field(
-        "",
+        default="",
         description="用于字节豆包模型",
         examples=["ep-20240101000000-abc123"],
         json_schema_extra={"providers": ["bytedance"]},
     )
     region: Optional[str] = Field(
-        "",
+        default="",
         description="用于腾讯混元等需要指定地区的服务",
         examples=["ap-beijing"],
         json_schema_extra={"providers": ["tencent"]},
     )
     app_id: Optional[str] = Field(
-        "",
+        default="",
         description="讯飞星火需要",
         examples=["404abcde"],
         json_schema_extra={"providers": ["iflytek"]},
     )
-    max_tokens: Optional[PositiveInt] = Field(None, examples=[4096, 8192])
-    max_input_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 2048])
-    max_output_tokens: Optional[PositiveInt] = Field(None, examples=[1024, 4096])
-    temperature: Optional[NonNegativeFloat] = Field(None, examples=[0.7, 0.8])
-    top_p: Optional[NonNegativeFloat] = Field(None, le=1.0, examples=[1.0])
-    top_k: Optional[NonNegativeInt] = Field(None, examples=[50, 100])
-    stop_sequences: Optional[List[str]] = Field(None, examples=[["stop1", "stop2"]])
-    http_proxy: Optional[HttpUrl] = Field(None, examples=["https://example-proxy.com"])
+    max_tokens: Optional[PositiveInt] = Field(default=None, examples=[4096, 8192])
+    max_input_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 2048])
+    max_output_tokens: Optional[PositiveInt] = Field(default=None, examples=[1024, 4096])
+    temperature: Optional[NonNegativeFloat] = Field(default=None, examples=[0.7, 0.8])
+    top_p: Optional[NonNegativeFloat] = Field(default=None, le=1.0, examples=[1.0])
+    top_k: Optional[NonNegativeInt] = Field(default=None, examples=[50, 100])
+    stop_sequences: Optional[List[str]] = Field(default=None, examples=[["stop1", "stop2"]])
+    http_proxy: Optional[HttpUrl] = Field(default=None, examples=["https://example-proxy.com"])
     cf_account_id: Optional[SecretStr] = Field(
-        None,
+        default=None,
         description="Cloudflare Account ID",
         examples=["fe18f2a883e6401c9ee72ab358714088"],
         json_schema_extra={"providers": ["cloudflare"]},
@@ -367,8 +180,8 @@ class RemoteLanguageModelConfig(ModelConfig):
 class RemoteLanguageModelMetaInfo(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
 
-    api_url: Optional[AnyUrl] = Field("", description="TODO")
-    model_api_url_mappings: Optional[Dict[str, AnyUrl]] = Field({}, description="TODO")
+    api_url: Optional[AnyUrl] = Field(default=None, description="TODO")
+    model_api_url_mappings: Optional[Dict[str, AnyUrl]] = Field(default={}, description="TODO")
     language_models: Optional[List[str]] = []
     visual_language_models: Optional[List[str]] = []
     tool_models: Optional[List[str]] = []
@@ -415,7 +228,7 @@ class RemoteLanguageModel(LanguageModel):
 
         return self.config.is_online_model
 
-    def _validate_model(self, messages: conlist(ChatMessage, min_length=1)):
+    def _validate_model(self, messages: Annotated[List[ChatMessage], Field(min_length=1)]):
         message_parts = chain.from_iterable(
             [message.content for message in messages if isinstance(message, UserMessage)]
         )
@@ -424,8 +237,8 @@ class RemoteLanguageModel(LanguageModel):
 
     @classmethod
     @validate_call
-    def _get_supported_models(cls) -> conlist(str, min_length=1):
-        return cls.META.language_models + cls.META.visual_language_models
+    def _get_supported_models(cls) -> Annotated[List[str], Field(min_length=1)]:
+        return (cls.META.language_models or []) + (cls.META.visual_language_models or [])
 
     @classmethod
     def list_providers(cls):
@@ -521,7 +334,7 @@ class RemoteLanguageModel(LanguageModel):
             raise ValueError(f"Unsupported model: {self.model}")
 
         original_config = self.config.model_dump(exclude_unset=True)
-        for field in self.META.required_config_fields:
+        for field in self.META.required_config_fields or []:
             if field not in original_config:
                 raise ValueError(f"config field missed: {field}")
 
@@ -536,7 +349,9 @@ class RemoteLanguageModel(LanguageModel):
 
     def _get_api_url(self):
         return (
-            self.META.api_url or self.config.api_url or self.META.model_api_url_mappings[self.model]
+            self.META.api_url
+            or self.config.api_url
+            or (self.META.model_api_url_mappings or {}).get(self.model)
         )
 
     @validate_call
@@ -590,7 +405,7 @@ class HttpServiceModel(RemoteLanguageModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         # FIXME: model 不支持 tools 的时候，如果 messages 里有 ToolMessage
@@ -626,7 +441,7 @@ class HttpServiceModel(RemoteLanguageModel):
     @validate_call
     def _make_api_body(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: GenerateConfig,
         system: Optional[str] = None,
     ):
@@ -639,14 +454,14 @@ class HttpServiceModel(RemoteLanguageModel):
 
         always_merger.merge(body, self._convert_generation_config(config, system=system))
         always_merger.merge(body, self._convert_extra_generation_config(config.extra))
-        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(
+        return self.REQUEST_BODY_CLS.model_validate(body).model_dump(  # type: ignore
             exclude_none=True, by_alias=True
         )
 
     @validate_call
     def chat(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         config: Optional[GenerateConfig] = None,
         system: Optional[str] = None,
     ) -> GenerationResult:
@@ -660,10 +475,12 @@ class HttpServiceModel(RemoteLanguageModel):
         )
         return self._call_api(api_url, request_data)
 
-    def _is_valid_response(cls, http_response):
+    def _is_valid_response(self, http_response):
         return http_response.status_code == 200
 
     def _parse_response(self, http_response) -> GenerationResult:
+        if not self.RESPONSE_BODY_CLS:
+            raise ValueError("RESPONSE_BODY_CLS is not set for this service model")
         return self.RESPONSE_BODY_CLS.model_validate(http_response.json()).to_standard(
             model=self.model
         )
@@ -699,3 +516,56 @@ class HttpServiceModel(RemoteLanguageModel):
 
         result.original_result = response.text
         return result
+
+    @validate_call
+    def chat_as_openai(
+        self,
+        messages: List[Dict[str, Any]],
+        model: str,
+        frequency_penalty: Optional[float] = None,
+        logit_bias: Optional[Dict[str, int]] = None,
+        logprobs: Optional[bool] = None,
+        top_logprobs: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        n: Optional[int] = None,
+        presence_penalty: Optional[float] = None,
+        response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = None,
+        seed: Optional[int] = None,
+        stop: Optional[Union[str, List[str]]] = None,
+        stream: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+        user: Optional[str] = None,
+    ):
+        from .openai_types import OpenAIRequestBody, OpenAIResponseBody
+
+        request_body = OpenAIRequestBody(
+            messages=messages,
+            model=model,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
+            max_tokens=max_tokens,
+            n=n,
+            presence_penalty=presence_penalty,
+            response_format=response_format,
+            seed=seed,
+            stop=stop,
+            stream=stream,
+            temperature=temperature,
+            top_p=top_p,
+            tools=tools,
+            tool_choice=tool_choice,
+            user=user,
+        )
+
+        standard_request = request_body.to_standard()
+        result = self.chat(
+            messages=standard_request["messages"],
+            config=standard_request["config"],
+            system=standard_request["system"],
+        )
+        return OpenAIResponseBody.from_standard(result)

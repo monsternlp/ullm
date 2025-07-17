@@ -1,247 +1,35 @@
-import base64
-import json
-from typing import Any, Dict, List, Literal, Optional, Union
-from uuid import uuid4
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, confloat, conint, conlist, validate_call
+from pydantic import validate_call
 
 from .base import (
-    AssistantMessage,
-    ChatMessage,
-    FunctionObject,
-    GenerateConfig,
-    GenerationResult,
     HttpServiceModel,
-    ImagePart,
-    JsonSchemaObject,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    TextPart,
+)
+from .openai_types import (
+    AzureOpenAIRequestBody,
+    OpenAIAssistantMessage,
+    OpenAIChatMessage,
+    OpenAIRequestBody,
+    OpenAIResponseBody,
+    OpenAISystemMessage,
+    OpenAITool,
+    OpenAIToolChoice,
+    OpenAIToolMessage,
+    OpenAIUserMessage,
+)
+from .types import (
+    AssistantMessage,
+    ChatMessage,
+    GenerateConfig,
     Tool,
-    ToolCall,
     ToolChoice,
     ToolMessage,
     UserMessage,
 )
 
-OpenAITextPart = TextPart
-
-
-class OpenAISystemMessage(BaseModel):
-    role: Literal["system"] = "system"
-    content: str
-
-
-class OpenAIImageURL(BaseModel):
-    url: str
-    detail: Optional[Literal["auto", "low", "high"]] = "auto"
-
-
-class OpenAIImagePart(BaseModel):
-    type: Literal["image_url"] = "image_url"
-    image_url: OpenAIImageURL
-
-
-class OpenAIUserMessage(BaseModel):
-    role: Literal["user"] = "user"
-    content: Union[str, conlist(Union[OpenAITextPart, OpenAIImagePart], min_length=1)]
-
-    @classmethod
-    def from_standard(cls, user_message: UserMessage):
-        if all(isinstance(part, TextPart) for part in user_message.content):
-            content = "\n".join([part.text for part in user_message.content])
-            return cls(content=content)
-
-        parts = []
-        for part in user_message.content:
-            if isinstance(part, TextPart):
-                parts.append(part)
-            elif isinstance(part, ImagePart):
-                if part.url:
-                    parts.append(OpenAIImagePart(image_url=OpenAIImageURL(url=str(part.url))))
-
-                else:
-                    base64_data = base64.b64encode(part.data).decode("utf-8")
-                    parts.append(
-                        OpenAIImagePart(
-                            image_url=OpenAIImageURL(
-                                url=f"data:{part.mime_type};base64,{base64_data}"
-                            )
-                        )
-                    )
-
-        return cls(content=parts)
-
-
-class OpenAIFunctionCall(BaseModel):
-    name: str
-    arguments: str
-
-
-class OpenAIToolCall(ToolCall):
-    function: Optional[OpenAIFunctionCall] = None
-
-    @classmethod
-    def from_standard(cls, tool_call):
-        return cls(
-            id=tool_call.id,
-            type=tool_call.type,
-            function={
-                "name": tool_call.function.name,
-                "arguments": json.dumps(tool_call.function.arguments, ensure_ascii=False),
-            },
-        )
-
-    def to_standard(self):
-        return ToolCall(
-            id=self.id,
-            type=self.type,
-            function={
-                "name": self.function.name,
-                "arguments": json.loads(self.function.arguments),
-            },
-        )
-
-
-class OpenAIAssistantMessage(AssistantMessage):
-    tool_calls: Optional[List[OpenAIToolCall]] = None
-    reasoning_content: Optional[str] = ""
-
-    @classmethod
-    def from_standard(cls, message: AssistantMessage):
-        tool_calls = None
-        if message.tool_calls:
-            tool_calls = []
-            for tool_call in message.tool_calls:
-                tool_calls.append(OpenAIToolCall.from_standard(tool_call))
-
-        return cls(
-            role=message.role,
-            content=message.content,
-            tool_calls=tool_calls,
-        )
-
-
-class OpenAIToolMessage(BaseModel):
-    role: Literal["tool"] = "tool"
-    content: Optional[str] = "success"
-    tool_call_id: Optional[str] = Field(default_factory=lambda: uuid4().hex)
-
-    @classmethod
-    def from_standard(cls, tool_message: ToolMessage):
-        return cls(
-            role=tool_message.role,
-            content=tool_message.tool_result,
-            tool_call_id=tool_message.tool_call_id,
-        )
-
-
-OpenAIChatMessage = Union[
-    OpenAISystemMessage, OpenAIUserMessage, OpenAIToolMessage, OpenAIAssistantMessage
-]
-
-
-class OpenAIFunctionObject(BaseModel):
-    name: str
-    description: Optional[str] = None
-    parameters: Optional[JsonSchemaObject] = None
-
-    @classmethod
-    def from_standard(cls, function: FunctionObject):
-        parameters, required = {}, []
-        for argument in function.arguments or []:
-            if argument.required:
-                required.append(argument.name)
-
-            parameters[argument.name] = {
-                "type": argument.type,
-                "description": argument.description,
-            }
-
-        return cls(
-            name=function.name,
-            description=function.description,
-            parameters={"type": "object", "properties": parameters, "required": required},
-        )
-
-
-class OpenAITool(BaseModel):
-    type: Literal["function"]
-    function: OpenAIFunctionObject
-
-    @classmethod
-    def from_standard(cls, tool: Tool):
-        return cls(type=tool.type, function=OpenAIFunctionObject.from_standard(tool.function))
-
-
-class OpenAIToolChoice(BaseModel):
-    type: Literal["function"]
-    function: Dict[Literal["name"], str]
-
-
-class OpenAIRequestBody(BaseModel):
-    # https://platform.openai.com/docs/api-reference/chat/create
-    # NOTE:
-    # 1. gpt-4-vision 不能设置 logprobs/logit_bias/tools/tool_choice/response_format 几个参数
-    # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
-    messages: conlist(OpenAIChatMessage, min_length=1)
-    model: str
-    frequency_penalty: Optional[confloat(ge=-2.0, le=2.0)] = None
-    logit_bias: Optional[Dict[str, int]] = None
-    logprobs: Optional[bool] = None
-    top_logprobs: Optional[conint(ge=0, le=20)] = None
-    max_tokens: Optional[int] = None
-    n: Optional[conint(ge=1, le=128)] = 1
-    presence_penalty: Optional[confloat(ge=-2.0, le=2.0)] = None
-    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = None
-    seed: Optional[int] = None
-    stop: Optional[Union[str, List[str]]] = None
-    stream: Optional[bool] = False
-    temperature: Optional[confloat(ge=0.0, le=2.0)] = None
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = None
-    tools: Optional[List[OpenAITool]] = None
-    tool_choice: Optional[Union[Literal["auto", "none"], OpenAIToolChoice]] = None
-    user: Optional[str] = None
-
-
-class OpenAIResponseChoice(BaseModel):
-    finish_reason: str
-    index: int
-    message: OpenAIAssistantMessage
-
-
-class OpenAIResponseUsage(BaseModel):
-    completion_tokens: int
-    prompt_tokens: int
-    total_tokens: int
-
-
-class OpenAIResponseBody(BaseModel):
-    id: str
-    choices: conlist(OpenAIResponseChoice, min_length=1)
-    created: int
-    model: str
-    system_fingerprint: Optional[str] = None
-    object: Literal["chat.completion"]
-    usage: Optional[OpenAIResponseUsage] = None
-
-    def to_standard(self, model: str = None):
-        tool_calls = None
-        if self.choices[0].message.tool_calls:
-            tool_calls = []
-            for tool_call in self.choices[0].message.tool_calls:
-                tool_calls.append(tool_call.to_standard())
-
-        return GenerationResult(
-            model=model or self.model,
-            stop_reason=self.choices[0].finish_reason,
-            content=self.choices[0].message.content,
-            reasoning_content=self.choices[0].message.reasoning_content,
-            tool_calls=tool_calls,
-            input_tokens=self.usage.prompt_tokens,
-            output_tokens=self.usage.completion_tokens,
-            total_tokens=self.usage.total_tokens,
-        )
+# === OpenAI model implementations ===
 
 
 @RemoteLanguageModel.register("openai-compatible")
@@ -271,7 +59,7 @@ class OpenAICompatibleModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: List[ChatMessage],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         messages = [self._convert_message(message) for message in messages]
@@ -291,7 +79,7 @@ class OpenAICompatibleModel(HttpServiceModel):
         if tools and tool_choice is not None:
             openai_tool_choice = tool_choice.mode
             if openai_tool_choice == "any":
-                if len(tool_choice.functions) == 1:
+                if tool_choice.functions and len(tool_choice.functions) == 1:
                     openai_tool_choice = OpenAIToolChoice(
                         type="function", function={"name": tool_choice.functions[0]}
                     )
@@ -397,10 +185,6 @@ class OpenAIModel(OpenAICompatibleModel):
         ],
         required_config_fields=["api_key"],
     )
-
-
-class AzureOpenAIRequestBody(OpenAIRequestBody):
-    model: Optional[str] = Field(None, exclude=True)
 
 
 @RemoteLanguageModel.register("azure-openai")

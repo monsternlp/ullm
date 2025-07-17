@@ -1,27 +1,29 @@
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import Field, PositiveInt, conint
+from pydantic import Field, PositiveInt
 
 from .base import (
-    GenerateConfig,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import (
-    OpenAICompatibleModel,
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIRequestBody,
+)
+from .types import (
+    GenerateConfig,
 )
 
 
 class TogetherAIRequestBody(OpenAIRequestBody):
     # reference: https://docs.together.ai/reference/chat-completions-1
     ## excluded parameters
-    top_logprobs: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    top_logprobs: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
     ## different parameters
-    logprobs: Optional[conint(ge=0, le=20)] = None
+    logprobs: Optional[Annotated[int, Field(ge=0, le=20)]] = None
     stop: Optional[List[str]] = None
     response_format: Optional[Dict[Literal["type"], Literal["json_object"]]] = None
 

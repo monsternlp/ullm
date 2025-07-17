@@ -1,28 +1,22 @@
 import base64
 import json
-from typing import Any, Dict, List, Literal, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    PositiveInt,
-    confloat,
-    conlist,
-    model_validator,
-    validate_call,
-)
+from pydantic import BaseModel, Field, PositiveInt, model_validator, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     FunctionCall,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     ImagePart,
     JsonSchemaObject,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolCall,
@@ -254,8 +248,10 @@ class GoogleGenerationConfig(BaseModel):
     )
     candidate_count: Optional[PositiveInt] = Field(1, serialization_alias="candidateCount")
     max_output_tokens: Optional[PositiveInt] = Field(None, serialization_alias="maxOutputTokens")
-    temperature: Optional[confloat(ge=0.0, le=2.0)] = None
-    top_p: Optional[confloat(ge=0.0, le=1.0)] = Field(None, serialization_alias="topP")
+    temperature: Optional[Annotated[float, Field(ge=0.0, le=2.0)]] = None
+    top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = Field(
+        None, serialization_alias="topP"
+    )
     top_k: Optional[PositiveInt] = Field(None, serialization_alias="topK")
 
 
@@ -330,7 +326,7 @@ class GoogleUsageMetadata(BaseModel):
 
 class GoogleGenerateContentResponseBody(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/GenerateContentResponse
-    candidates: conlist(GoogleCandidate, min_length=1)
+    candidates: Annotated[List[GoogleCandidate], Field(min_length=1)]
     prompt_feedback: Optional[GooglePromptFeedback] = Field(None, alias="promptFeedback")
     usage_metadata: GoogleUsageMetadata = Field(..., alias="usageMetadata")
 
@@ -413,7 +409,7 @@ class GoogleModel(HttpServiceModel):
     @validate_call
     def _convert_messages(
         self,
-        messages: conlist(ChatMessage, min_length=1),
+        messages: Annotated[List[ChatMessage], Field(min_length=1)],
         system: Optional[str] = None,
     ) -> Dict[str, Any]:
         contents = [self._convert_message(msg) for msg in messages]

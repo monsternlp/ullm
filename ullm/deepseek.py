@@ -1,14 +1,14 @@
-from typing import Any, Optional
+from typing import Annotated, Any, List, Optional
 
-from pydantic import Field, conlist
+from pydantic import Field
 
 from .base import (
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import (
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIAssistantMessage,
-    OpenAICompatibleModel,
     OpenAIRequestBody,
     OpenAIResponseBody,
     OpenAIResponseChoice,
@@ -18,10 +18,10 @@ from .openai import (
 class DeepSeekRequestBody(OpenAIRequestBody):
     # reference: https://platform.moonshot.cn/docs/api/chat
     ## excluded parameters
-    logit_bias: Optional[Any] = Field(None, exclude=True)
-    n: Optional[Any] = Field(None, exclude=True)
-    seed: Optional[Any] = Field(None, exclude=True)
-    user: Optional[Any] = Field(None, exclude=True)
+    logit_bias: Optional[Any] = Field(default=None, exclude=True)
+    n: Optional[Any] = Field(default=None, exclude=True)
+    seed: Optional[Any] = Field(default=None, exclude=True)
+    user: Optional[Any] = Field(default=None, exclude=True)
 
 
 class DeepSeekAssistantMessage(OpenAIAssistantMessage):
@@ -34,7 +34,7 @@ class DeepSeekResponseChoice(OpenAIResponseChoice):
 
 
 class DeepSeekResponseBody(OpenAIResponseBody):
-    choices: conlist(DeepSeekResponseChoice, min_length=1)
+    choices: Annotated[List[DeepSeekResponseChoice], Field(min_length=1)]
 
     def to_standard(self, model: str = None):
         result = super().to_standard(model=model)
