@@ -4,6 +4,7 @@ import os
 import pytest
 
 from ullm import AssistantMessage, LanguageModel, ToolMessage, UserMessage
+from ullm.base import HttpServiceModel
 from ullm.openai import (
     OpenAIAssistantMessage,
     OpenAICompatibleModel,
@@ -11,6 +12,7 @@ from ullm.openai import (
     OpenAIToolMessage,
     OpenAIUserMessage,
 )
+from ullm.openai_types import OpenAIFunctionObject
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DATA = None
@@ -19,6 +21,106 @@ IMAGE_FILE = os.path.join(WORK_DIR, "SSU_Kirby_artwork.png")
 with open(IMAGE_FILE, "rb") as f:
     IMAGE_DATA = f.read()
     IMAGE_BASE64_DATA = base64.b64encode(IMAGE_DATA).decode("utf-8")
+
+
+MESSAGE_CONVERSION_TEST_CASES = [
+    (
+        AssistantMessage(content="A assistant response"),
+        OpenAIAssistantMessage(content="A assistant response"),
+    ),
+    (
+        AssistantMessage(
+            tool_calls=[
+                {
+                    "id": "id",
+                    "type": "function",
+                    "function": {
+                        "name": "func1",
+                        "arguments": {"arg1": "val1", "arg2": "val2"},
+                    },
+                }
+            ]
+        ),
+        OpenAIAssistantMessage(
+            tool_calls=[
+                {
+                    "id": "id",
+                    "type": "function",
+                    "function": {
+                        "name": "func1",
+                        "arguments": '{"arg1": "val1", "arg2": "val2"}',
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        UserMessage(content=[{"type": "text", "text": "hello"}]),
+        OpenAIUserMessage(content="hello"),
+    ),
+    (
+        UserMessage(
+            content=[
+                {
+                    "type": "image",
+                    "url": "https://upload.wikimedia.org/wikipedia/zh/2/2d/SSU_Kirby_artwork.png",
+                }
+            ]
+        ),
+        OpenAIUserMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://upload.wikimedia.org/wikipedia/zh/2/2d/SSU_Kirby_artwork.png"
+                    },
+                }
+            ]
+        ),
+    ),
+    (
+        UserMessage(
+            content=[
+                {
+                    "type": "image",
+                    "data": IMAGE_DATA,
+                }
+            ]
+        ),
+        OpenAIUserMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{IMAGE_BASE64_DATA}"},
+                }
+            ]
+        ),
+    ),
+    (
+        UserMessage(
+            content=[
+                {
+                    "type": "image",
+                    "data": IMAGE_DATA,
+                },
+                {"type": "text", "text": "Describe this image."},
+            ]
+        ),
+        OpenAIUserMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{IMAGE_BASE64_DATA}"},
+                },
+                {"type": "text", "text": "Describe this image."},
+            ]
+        ),
+    ),
+    (
+        ToolMessage(tool_call_id="id1", tool_name="func1", tool_result="success"),
+        OpenAIToolMessage(tool_call_id="id1", content="success"),
+    ),
+]
 
 
 @pytest.mark.parametrize(
@@ -78,111 +180,22 @@ def test_load_error(config):
         _ = LanguageModel.from_config(config)
 
 
-@pytest.mark.parametrize(
-    ("source", "target"),
-    [
-        (
-            AssistantMessage(content="A assistant response"),
-            OpenAIAssistantMessage(content="A assistant response"),
-        ),
-        (
-            AssistantMessage(
-                tool_calls=[
-                    {
-                        "id": "id",
-                        "type": "function",
-                        "function": {
-                            "name": "func1",
-                            "arguments": '{"arg1": "val1", "arg2": "val2"}',
-                        },
-                    }
-                ]
-            ),
-            OpenAIAssistantMessage(
-                tool_calls=[
-                    {
-                        "id": "id",
-                        "type": "function",
-                        "function": {
-                            "name": "func1",
-                            "arguments": '{"arg1": "val1", "arg2": "val2"}',
-                        },
-                    }
-                ]
-            ),
-        ),
-        (
-            UserMessage(content=[{"type": "text", "text": "hello"}]),
-            OpenAIUserMessage(content="hello"),
-        ),
-        (
-            UserMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "url": "https://upload.wikimedia.org/wikipedia/zh/2/2d/SSU_Kirby_artwork.png",
-                    }
-                ]
-            ),
-            OpenAIUserMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": "https://upload.wikimedia.org/wikipedia/zh/2/2d/SSU_Kirby_artwork.png"
-                        },
-                    }
-                ]
-            ),
-        ),
-        (
-            UserMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "path": IMAGE_FILE,
-                    }
-                ]
-            ),
-            OpenAIUserMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{IMAGE_BASE64_DATA}"},
-                    }
-                ]
-            ),
-        ),
-        (
-            UserMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "path": IMAGE_FILE,
-                    },
-                    {"type": "text", "text": "Describe this image."},
-                ]
-            ),
-            OpenAIUserMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{IMAGE_BASE64_DATA}"},
-                    },
-                    {"type": "text", "text": "Describe this image."},
-                ]
-            ),
-        ),
-        (
-            ToolMessage(tool_call_id="id1", tool_name="func1", tool_result="success"),
-            OpenAIToolMessage(tool_call_id="id1", content="success"),
-        ),
-    ],
-)
-def test_convert_message(source, target):
-    converted = OpenAICompatibleModel._convert_message(source)
-    assert type(converted) is type(target)
-    assert converted and converted.model_dump() == target.model_dump()
+@pytest.mark.parametrize(("openai_message", "ullm_message"), MESSAGE_CONVERSION_TEST_CASES)
+def test_convert_message(openai_message, ullm_message):
+    converted = OpenAICompatibleModel._convert_message(openai_message)
+    assert type(converted) is type(ullm_message)
+    assert converted and converted.model_dump() == ullm_message.model_dump()
+
+
+@pytest.mark.parametrize(("ullm_message", "openai_message"), MESSAGE_CONVERSION_TEST_CASES)
+def test_convert_message_to_standard(ullm_message, openai_message):
+    converted = openai_message.to_standard()
+    assert isinstance(converted, type(ullm_message))
+    if isinstance(converted, ToolMessage):
+        assert converted.tool_call_id == ullm_message.tool_call_id
+        assert converted.tool_result == ullm_message.tool_result
+    else:
+        assert converted.model_dump() == ullm_message.model_dump()
 
 
 TOOLS = [
@@ -220,6 +233,25 @@ OPENAI_TOOLS = [
         },
     }
 ]
+
+
+@pytest.mark.parametrize(
+    ("source", "target"),
+    [
+        (TOOLS[0]["function"], OPENAI_TOOLS[0]["function"]),
+    ],
+)
+def test_convert_function_to_standard(source, target):
+    openai_fn = OpenAIFunctionObject.model_validate(target)
+    ullm_fn = openai_fn.to_standard()
+
+    assert ullm_fn.name == source["name"]
+    assert ullm_fn.description == source["description"]
+    assert len(ullm_fn.arguments) == len(source["arguments"])
+    for i, arg in enumerate(ullm_fn.arguments):
+        assert arg.name == source["arguments"][i]["name"]
+        assert arg.type == source["arguments"][i]["type"]
+        assert arg.description == source["arguments"][i]["description"]
 
 
 @pytest.mark.parametrize(
@@ -317,4 +349,5 @@ OPENAI_TOOLS = [
 )
 def test_make_api_body(model_config, messages, config, system, api_body):
     model = LanguageModel.from_config(model_config)
+    assert isinstance(model, HttpServiceModel)
     assert model._make_api_body(messages, config, system) == api_body
