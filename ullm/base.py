@@ -55,7 +55,7 @@ class ImagePart(BaseModel):
         if data.get("data"):
             data["mime_type"] = magic.from_buffer(data["data"], mime=True)
         else:
-            data["mime_type"], _ = mimetypes.guess_type(data["url"])
+            data["mime_type"], _ = mimetypes.guess_type(str(data["url"]))
 
         return data
 
@@ -703,3 +703,56 @@ class HttpServiceModel(RemoteLanguageModel):
 
         result.original_result = response.text
         return result
+
+    @validate_call
+    def chat_as_openai(
+        self,
+        messages: List[Dict[str, Any]],
+        model: str,
+        frequency_penalty: Optional[float] = None,
+        logit_bias: Optional[Dict[str, int]] = None,
+        logprobs: Optional[bool] = None,
+        top_logprobs: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        n: Optional[int] = None,
+        presence_penalty: Optional[float] = None,
+        response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = None,
+        seed: Optional[int] = None,
+        stop: Optional[Union[str, List[str]]] = None,
+        stream: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+        user: Optional[str] = None,
+    ):
+        from .openai import OpenAIRequestBody, OpenAIResponseBody
+
+        request_body = OpenAIRequestBody(
+            messages=messages,
+            model=model,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
+            max_tokens=max_tokens,
+            n=n,
+            presence_penalty=presence_penalty,
+            response_format=response_format,
+            seed=seed,
+            stop=stop,
+            stream=stream,
+            temperature=temperature,
+            top_p=top_p,
+            tools=tools,
+            tool_choice=tool_choice,
+            user=user,
+        )
+
+        standard_request = request_body.to_standard()
+        result = self.chat(
+            messages=standard_request["messages"],
+            config=standard_request["config"],
+            system=standard_request["system"],
+        )
+        return OpenAIResponseBody.from_standard(result)

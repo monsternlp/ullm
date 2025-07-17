@@ -1,5 +1,6 @@
 import base64
 import json
+import time
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
@@ -139,7 +140,7 @@ class OpenAIToolCall(ToolCall):
 
 class OpenAIAssistantMessage(AssistantMessage):
     tool_calls: Optional[List[OpenAIToolCall]] = None
-    reasoning_content: Optional[str] = ""
+    reasoning_content: Optional[str] = None
 
     @classmethod
     def from_standard(cls, message: AssistantMessage):
@@ -220,7 +221,7 @@ class OpenAIFunctionObject(BaseModel):
                         "name": name,
                         "type": prop.get("type", "string"),
                         "description": prop.get("description", ""),
-                        "required": name in self.parameters.required or [],  # type: ignore
+                        "required": name in (self.parameters.required or []),  # type: ignore
                     }
                 )
         return FunctionObject(
@@ -355,6 +356,31 @@ class OpenAIResponseBody(BaseModel):
             input_tokens=getattr(self.usage, "prompt_tokens", None),
             output_tokens=getattr(self.usage, "completion_tokens", None),
             total_tokens=getattr(self.usage, "total_tokens", None),
+        )
+
+    @classmethod
+    def from_standard(cls, result: GenerationResult) -> "OpenAIResponseBody":
+        message = OpenAIAssistantMessage.from_standard(result.to_message())
+        choice = OpenAIResponseChoice(finish_reason=result.stop_reason, index=0, message=message)
+        usage = None
+        if (
+            result.input_tokens is not None
+            and result.output_tokens is not None
+            and result.total_tokens is not None
+        ):
+            usage = OpenAIResponseUsage(
+                prompt_tokens=result.input_tokens,
+                completion_tokens=result.output_tokens,
+                total_tokens=result.total_tokens,
+            )
+
+        return cls(
+            id=f"chatcmpl-{uuid4().hex}",
+            choices=[choice],
+            created=int(time.time()),
+            model=result.model,
+            object="chat.completion",
+            usage=usage,
         )
 
 
