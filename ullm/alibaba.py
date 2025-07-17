@@ -3,11 +3,14 @@ from typing import Annotated, Any, Dict, List, Optional
 from pydantic import Field
 
 from .base import (
-    GenerateConfig,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import OpenAIChatMessage, OpenAICompatibleModel, OpenAIRequestBody
+from .openai import OpenAICompatibleModel
+from .openai_types import OpenAIChatMessage, OpenAIRequestBody
+from .types import (
+    GenerateConfig,
+)
 
 
 class AlibabaRequestBody(OpenAIRequestBody):

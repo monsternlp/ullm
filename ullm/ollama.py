@@ -2,22 +2,18 @@ import base64
 from datetime import datetime
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    NonNegativeFloat,
-    PositiveInt,
-    validate_call,
-)
+from pydantic import BaseModel, Field, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     ToolMessage,
     UserMessage,
@@ -69,9 +65,9 @@ class OllamaChatMessage(BaseModel):
 class OllamaRequestOptions(BaseModel):
     # reference: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values
     mirostat: Optional[Annotated[int, Field(ge=0, le=2)]] = None
-    mirostat_eta: Optional[NonNegativeFloat] = None
-    mirostat_tau: Optional[NonNegativeFloat] = None
-    num_ctx: Optional[PositiveInt] = None
+    mirostat_eta: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
+    mirostat_tau: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
+    num_ctx: Optional[Annotated[int, Field(ge=0)]] = None
     repeat_last_n: Optional[Annotated[int, Field(ge=-1)]] = None
     repeat_penalty: Optional[float] = None
     temperature: Optional[Annotated[float, Field(ge=0.0, le=2.0)]] = None
@@ -79,8 +75,8 @@ class OllamaRequestOptions(BaseModel):
     # NOTE: stop is a list based on this - https://github.com/ollama/ollama/pull/442
     stop: Optional[List[str]] = None
     tfs_z: Optional[Annotated[float, Field(ge=1.0)]] = None
-    num_predict: Optional[PositiveInt] = None
-    top_k: Optional[PositiveInt] = None
+    num_predict: Optional[Annotated[int, Field(ge=0)]] = None
+    top_k: Optional[Annotated[int, Field(ge=0)]] = None
     top_p: Optional[Annotated[float, Field(ge=0.0, le=1.0)]] = None
 
 

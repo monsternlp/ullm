@@ -3,15 +3,17 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field
 
 from .base import (
-    GenerateConfig,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import (
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIAssistantMessage,
-    OpenAICompatibleModel,
     OpenAIRequestBody,
     OpenAIResponseBody,
+)
+from .types import (
+    GenerateConfig,
 )
 
 

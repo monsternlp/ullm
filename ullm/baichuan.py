@@ -3,23 +3,25 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIFunctionObject,
+    OpenAIRequestBody,
+    OpenAIResponseBody,
+    OpenAIToolCall,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolChoice,
     ToolMessage,
     UserMessage,
-)
-from .openai import (
-    OpenAICompatibleModel,
-    OpenAIFunctionObject,
-    OpenAIRequestBody,
-    OpenAIResponseBody,
-    OpenAIToolCall,
 )
 
 

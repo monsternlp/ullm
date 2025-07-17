@@ -1,29 +1,27 @@
 import base64
+import datetime
 import hashlib
 import hmac
 import json
 import sys
-from datetime import datetime
-from time import time
+import time
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    validate_call,
-)
+from pydantic import BaseModel, ConfigDict, Field, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .types import (
     AssistantMessage,
     ChatMessage,
     FunctionObject,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     ImagePart,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolCall,
@@ -31,7 +29,6 @@ from .base import (
     ToolMessage,
     UserMessage,
 )
-from .openai import OpenAICompatibleModel
 
 
 class TencentImageURL(BaseModel):

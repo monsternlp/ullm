@@ -4,20 +4,22 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, model_validator, validate_call
 
 from .base import (
-    FunctionObject,
-    GenerateConfig,
-    GenerationResult,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
-    Tool,
-    ToolChoice,
 )
-from .openai import (
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIAssistantMessage,
-    OpenAICompatibleModel,
     OpenAIRequestBody,
     OpenAIResponseBody,
     OpenAIResponseChoice,
+)
+from .types import (
+    FunctionObject,
+    GenerateConfig,
+    GenerationResult,
+    Tool,
+    ToolChoice,
 )
 
 

@@ -10,13 +10,15 @@ from pydantic import (
 )
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     ToolMessage,
     UserMessage,
