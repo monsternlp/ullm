@@ -6,7 +6,10 @@ from .base import (
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import OpenAICompatibleModel, OpenAIRequestBody
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIRequestBody,
+)
 
 
 class GroqRequestBody(OpenAIRequestBody):

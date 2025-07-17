@@ -2,25 +2,21 @@ import base64
 import json
 from typing import Annotated, Any, Dict, List, Literal, Optional
 
-from pydantic import (
-    BaseModel,
-    Field,
-    PositiveInt,
-    model_validator,
-    validate_call,
-)
+from pydantic import BaseModel, Field, PositiveInt, model_validator, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     FunctionCall,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     ImagePart,
     JsonSchemaObject,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolCall,

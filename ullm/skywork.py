@@ -6,13 +6,15 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     ToolMessage,
     UserMessage,

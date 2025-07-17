@@ -3,13 +3,9 @@ from .anthropic import AnthropicModel
 from .baichuan import BaichuanModel
 from .baidu import BaiduModel
 from .base import (
-    AssistantMessage,
-    GenerateConfig,
     LanguageModel,
     LocalLanguageModel,
     RemoteLanguageModel,
-    ToolMessage,
-    UserMessage,
 )
 from .bytedance import ByteDanceModel
 from .cloudflare import CloudflareModel
@@ -29,6 +25,12 @@ from .skywork import SkyWorkModel
 from .stepfun import StepFunModel
 from .tencent import TencentModel
 from .together import TogetherAIModel
+from .types import (
+    AssistantMessage,
+    GenerateConfig,
+    ToolMessage,
+    UserMessage,
+)
 from .zero_one import ZeroOneAIModel
 from .zhipu import ZhipuAIModel
 

@@ -1,20 +1,21 @@
 import base64
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, model_validator, validate_call
+from pydantic import BaseModel, Field, PositiveInt, model_validator, validate_call
 
 from .base import (
+    HttpServiceModel,
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .types import (
     AssistantMessage,
     ChatMessage,
     FunctionCall,
     GenerateConfig,
     GenerationResult,
-    HttpServiceModel,
     ImagePart,
     JsonSchemaObject,
-    PositiveInt,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
     Tool,
     ToolCall,

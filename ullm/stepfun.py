@@ -3,15 +3,20 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, validate_call
 
 from .base import (
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIRequestBody,
+)
+from .types import (
     FunctionObject,
     GenerateConfig,
     JsonSchemaObject,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     Tool,
     ToolChoice,
 )
-from .openai import OpenAICompatibleModel, OpenAIRequestBody
 
 
 class StepFunFunctionObject(BaseModel):

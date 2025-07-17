@@ -3,13 +3,15 @@ from typing import Annotated, Any, Dict, List, Literal, Optional
 from pydantic import Field, PositiveInt
 
 from .base import (
-    GenerateConfig,
     RemoteLanguageModel,
     RemoteLanguageModelMetaInfo,
 )
-from .openai import (
-    OpenAICompatibleModel,
+from .openai import OpenAICompatibleModel
+from .openai_types import (
     OpenAIRequestBody,
+)
+from .types import (
+    GenerateConfig,
 )
 
 

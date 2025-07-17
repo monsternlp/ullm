@@ -4,17 +4,19 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from .base import (
+    RemoteLanguageModel,
+    RemoteLanguageModelMetaInfo,
+)
+from .openai import OpenAICompatibleModel
+from .openai_types import (
+    OpenAIRequestBody,
+    OpenAIToolCall,
+)
+from .types import (
     Citation,
     GenerateConfig,
     GenerationResult,
-    RemoteLanguageModel,
-    RemoteLanguageModelMetaInfo,
     TextPart,
-)
-from .openai import (
-    OpenAICompatibleModel,
-    OpenAIRequestBody,
-    OpenAIToolCall,
 )
 
 

@@ -2,8 +2,10 @@ from typing import Annotated, Any, Dict, Literal, Optional
 
 from pydantic import AnyUrl, BaseModel, Field
 
-from .base import GenerateConfig, JsonSchemaObject, RemoteLanguageModel, RemoteLanguageModelMetaInfo
-from .openai import OpenAICompatibleModel, OpenAIRequestBody, OpenAIResponseBody
+from .base import RemoteLanguageModel, RemoteLanguageModelMetaInfo
+from .openai import OpenAICompatibleModel
+from .openai_types import OpenAIRequestBody, OpenAIResponseBody
+from .types import GenerateConfig, JsonSchemaObject
 
 
 class BaiduStreamOptions(BaseModel):
