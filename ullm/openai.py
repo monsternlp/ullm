@@ -3,7 +3,7 @@ import json
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, validate_call
+from pydantic import BaseModel, Field, HttpUrl, validate_call
 
 from .base import (
     AssistantMessage,
@@ -24,12 +24,13 @@ from .base import (
     UserMessage,
 )
 
-OpenAITextPart = TextPart
-
 
 class OpenAISystemMessage(BaseModel):
     role: Literal["system"] = "system"
     content: str
+
+    def to_standard(self) -> str:
+        return self.content
 
 
 class OpenAIImageURL(BaseModel):
@@ -37,9 +38,39 @@ class OpenAIImageURL(BaseModel):
     detail: Optional[Literal["auto", "low", "high"]] = Field(default="auto")
 
 
+class OpenAITextPart(TextPart):
+    @classmethod
+    def from_standard(cls, text_part: TextPart):
+        return cls(text=text_part.text)
+
+    def to_standard(self) -> TextPart:
+        return self
+
+
 class OpenAIImagePart(BaseModel):
     type: Literal["image_url"] = "image_url"
     image_url: OpenAIImageURL
+
+    @classmethod
+    def from_standard(cls, image_part: ImagePart):
+        if image_part.url:
+            return cls(image_url=OpenAIImageURL(url=str(image_part.url)))
+
+        else:
+            base64_data = base64.b64encode(image_part.data).decode("utf-8")
+            return cls(
+                image_url=OpenAIImageURL(url=f"data:{image_part.mime_type};base64,{base64_data}")
+            )
+
+    def to_standard(self) -> ImagePart:
+        if self.image_url.url.startswith("data:"):
+            # data:[<MIME-type>][;charset=<encoding>][;base64],<data>
+            _mime_type_str, _base64_data_str = self.image_url.url.split(",", 1)
+            mime_type = _mime_type_str.split(":")[1].split(";")[0]
+            data = base64.b64decode(_base64_data_str)
+            return ImagePart(data=data, mime_type=mime_type)
+        else:
+            return ImagePart(url=HttpUrl(self.image_url.url))
 
 
 class OpenAIUserMessage(BaseModel):
@@ -57,22 +88,20 @@ class OpenAIUserMessage(BaseModel):
         parts = []
         for part in user_message.content:
             if isinstance(part, TextPart):
-                parts.append(part)
+                parts.append(OpenAITextPart.from_standard(part))
             elif isinstance(part, ImagePart):
-                if part.url:
-                    parts.append(OpenAIImagePart(image_url=OpenAIImageURL(url=str(part.url))))
-
-                else:
-                    base64_data = base64.b64encode(part.data).decode("utf-8")
-                    parts.append(
-                        OpenAIImagePart(
-                            image_url=OpenAIImageURL(
-                                url=f"data:{part.mime_type};base64,{base64_data}"
-                            )
-                        )
-                    )
+                parts.append(OpenAIImagePart.from_standard(part))
 
         return cls(content=parts)
+
+    def to_standard(self) -> UserMessage:
+        if isinstance(self.content, str):
+            return UserMessage(content=[TextPart(text=self.content)])
+        else:
+            parts = []
+            for part in self.content:
+                parts.append(part.to_standard())
+            return UserMessage(content=parts)
 
 
 class OpenAIFunctionCall(BaseModel):
@@ -126,6 +155,14 @@ class OpenAIAssistantMessage(AssistantMessage):
             tool_calls=tool_calls,
         )
 
+    def to_standard(self) -> AssistantMessage:
+        tool_calls = None
+        if self.tool_calls:
+            tool_calls = [tool_call.to_standard() for tool_call in self.tool_calls]
+        return AssistantMessage(
+            content=self.content, tool_calls=tool_calls, reasoning_content=self.reasoning_content
+        )
+
 
 class OpenAIToolMessage(BaseModel):
     role: Literal["tool"] = "tool"
@@ -138,6 +175,11 @@ class OpenAIToolMessage(BaseModel):
             role=tool_message.role,
             content=tool_message.tool_result,
             tool_call_id=tool_message.tool_call_id,
+        )
+
+    def to_standard(self) -> ToolMessage:
+        return ToolMessage(
+            tool_call_id=self.tool_call_id, tool_name="", tool_result=self.content or ""
         )
 
 
@@ -169,6 +211,22 @@ class OpenAIFunctionObject(BaseModel):
             parameters={"type": "object", "properties": parameters, "required": required},
         )
 
+    def to_standard(self) -> FunctionObject:
+        arguments = []
+        if self.parameters and self.parameters.properties:
+            for name, prop in self.parameters.properties.items():
+                arguments.append(
+                    {
+                        "name": name,
+                        "type": prop.get("type", "string"),
+                        "description": prop.get("description", ""),
+                        "required": name in self.parameters.required or [],  # type: ignore
+                    }
+                )
+        return FunctionObject(
+            name=self.name, description=self.description or "", arguments=arguments
+        )
+
 
 class OpenAITool(BaseModel):
     type: Literal["function"]
@@ -178,10 +236,16 @@ class OpenAITool(BaseModel):
     def from_standard(cls, tool: Tool):
         return cls(type=tool.type, function=OpenAIFunctionObject.from_standard(tool.function))
 
+    def to_standard(self) -> Tool:
+        return Tool(type=self.type, function=self.function.to_standard())
+
 
 class OpenAIToolChoice(BaseModel):
     type: Literal["function"]
     function: Dict[Literal["name"], str]
+
+    def to_standard(self) -> ToolChoice:
+        return ToolChoice(mode="any", functions=[self.function["name"]])
 
 
 class OpenAIRequestBody(BaseModel):
@@ -209,6 +273,48 @@ class OpenAIRequestBody(BaseModel):
     tools: Optional[List[OpenAITool]] = Field(default=None)
     tool_choice: Optional[Union[Literal["auto", "none"], OpenAIToolChoice]] = Field(default=None)
     user: Optional[str] = Field(default=None)
+
+    def to_standard(self) -> Dict[str, Any]:
+        standard_messages: List[ChatMessage] = []
+        system_message: Optional[str] = None
+
+        for msg in self.messages:
+            if isinstance(msg, OpenAISystemMessage):
+                system_message = msg.to_standard()
+            elif isinstance(msg, (OpenAIUserMessage, OpenAIAssistantMessage, OpenAIToolMessage)):
+                standard_messages.append(msg.to_standard())
+            else:
+                raise ValueError(f"Unsupported message type: {type(msg)}")
+
+        config_data = {
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+            "stop_sequences": [self.stop] if isinstance(self.stop, str) else self.stop,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+        }
+
+        if self.response_format and self.response_format.get("type"):
+            config_data["response_format"] = self.response_format["type"]
+
+        if self.tools:
+            config_data["tools"] = [tool.to_standard() for tool in self.tools]
+
+        if self.tool_choice:
+            if isinstance(self.tool_choice, str):
+                config_data["tool_choice"] = ToolChoice(mode=self.tool_choice)
+            elif isinstance(self.tool_choice, OpenAIToolChoice):
+                config_data["tool_choice"] = self.tool_choice.to_standard()
+
+        # Filter out None values to allow GenerateConfig defaults to apply
+        config = GenerateConfig(**{k: v for k, v in config_data.items() if v is not None})
+
+        return {
+            "messages": standard_messages,
+            "config": config,
+            "system": system_message,
+        }
 
 
 class OpenAIResponseChoice(BaseModel):
