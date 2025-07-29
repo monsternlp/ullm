@@ -42,9 +42,6 @@ class HubConfig(BaseSettings):
         return values
 
 
-HUB_CONFIG = HubConfig()
-
-
 class LanguageModelTable(DatabaseModel):
     remote = BooleanField(index=True)
     model_id = CharField(primary_key=True)
@@ -63,7 +60,7 @@ class ModelHub:
                 HUB_BACKEND=hub_backend, HUB_DB_URL=hub_db_url, HUB_REDIS_PREFIX=hub_redis_prefix
             )
         else:
-            config = HUB_CONFIG
+            config = HubConfig()
 
         self.hub_backend = config.HUB_BACKEND
         self.hub_db_url = config.HUB_DB_URL
