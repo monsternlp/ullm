@@ -53,7 +53,7 @@ class LanguageModelTable(DatabaseModel):
     created = DateTimeField(default=datetime.datetime.utcnow)
 
     class Meta:
-        db_table = "language_model"
+        table_name = "language_model"
 
 
 class ModelHub:
