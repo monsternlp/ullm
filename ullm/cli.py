@@ -200,5 +200,47 @@ def list_models(model_hub_backend, model_hub_db_url):
     print(tabulate(data, headers=headers, tablefmt="github"))
 
 
+@main.command("export-model")
+@click.option("--model-hub-backend", type=click.Choice(["rds", "redis"]), help="Model hub backend")
+@click.option("--model-hub-db-url", help="Model hub database url")
+@click.option("--model-id")
+@click.option("--model-config-file")
+def export_model(model_hub_backend, model_hub_db_url, model_id, model_config_file):
+    """Export specified model config"""
+    hub = ModelHub(model_hub_backend, model_hub_db_url)
+    valid_model_ids = [model_record.model_id for model_record in hub.list_models()]
+    if model_id and model_id not in valid_model_ids:
+        click.secho("Input model id is invalid", fg="red", bold=True)
+        return -1
+
+    if not model_id:
+        click.secho("Select a model id:", fg="green", bold=True)
+        for idx, model_id in enumerate(valid_model_ids):
+            print(f"[{idx + 1}] {model_id}")
+
+        model_idx = None
+        while model_idx is None:
+            model_idx = input("> ").strip()
+            if model_idx.isdigit() and int(model_idx) <= len(valid_model_ids):
+                model_idx = int(model_idx) - 1
+            elif model_idx in valid_model_ids:
+                model_idx = valid_model_ids.index(model_idx)
+            else:
+                model_idx = None
+
+            if model_idx is None:
+                click.secho("Please select a valid model_id", fg="red", bold=True)
+
+        model_id = valid_model_ids[model_idx]
+
+    model = hub.get_model(model_id)
+    model_config = model.config.model_dump(mode="json", exclude_none=True)
+    if model_config_file:
+        with open(model_config_file, "w") as fout:
+            json.dump(model_config, fout, ensure_ascii=False, indent=2)
+    else:
+        print(json.dumps(model_config, ensure_ascii=False, indent=2))
+
+
 if __name__ == "__main__":
     main()
