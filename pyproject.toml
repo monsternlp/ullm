@@ -1,6 +1,6 @@
 [project]
 name = "ullm"
-version = "0.11.0"
+version = "0.11.1"
 description = "A unified interface for local Large Language Model(LLM) models and online LLM providers."
 authors = [
     {name = "Linusp", email = "linusp1024@gmail.com"},

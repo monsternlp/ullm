@@ -320,7 +320,7 @@ class TencentModel(HttpServiceModel):
             "Host": "hunyuan.tencentcloudapi.com",
             "X-TC-Action": "ChatCompletions",
             "X-TC-VERSION": "2023-09-01",
-            "X-TC-Timestamp": str(int(time())),
+            "X-TC-Timestamp": str(int(time.time())),
             "X-TC-Region": self.config.region,
             "Content-Type": "application/json",
         }
