@@ -237,7 +237,7 @@ class TencentResponseBody(BaseModel):
                 tool_calls.append(tool_call.to_standard())
 
         return GenerationResult(
-            model=model or response.model,
+            model=model,
             stop_reason=response.choices[0].finish_reason,
             content=response.choices[0].message.content,
             tool_calls=tool_calls,
@@ -319,7 +319,7 @@ class TencentModel(HttpServiceModel):
         return {
             "Host": "hunyuan.tencentcloudapi.com",
             "X-TC-Action": "ChatCompletions",
-            "X-TC-VERSION": "2023-09-01",
+            "X-TC-Version": "2023-09-01",
             "X-TC-Timestamp": str(int(time.time())),
             "X-TC-Region": self.config.region,
             "Content-Type": "application/json",
@@ -356,7 +356,7 @@ class TencentModel(HttpServiceModel):
                 if len(tool_choice.functions) == 1:
                     tencent_tool_choice = "custom"
                     for tool in tools:
-                        if tool.name == tool_choice.functions[0]:
+                        if tool.function.name == tool_choice.functions[0]:
                             custom_tool = tool
                             break
 
@@ -372,8 +372,10 @@ class TencentModel(HttpServiceModel):
     ) -> Dict[str, Any]:
         generation_config = {
             "model": self.model.replace("-online", ""),
-            "top_p": config.top_p or self.config.top_p,
-            "temperature": config.temperature or self.config.temperature,
+            "top_p": config.top_p if config.top_p is not None else self.config.top_p,
+            "temperature": config.temperature
+            if config.temperature is not None
+            else self.config.temperature,
         }
         if self.is_online_model():
             generation_config["enable_enhancement"] = True
@@ -386,7 +388,8 @@ class TencentModel(HttpServiceModel):
         timestamp = int(header["X-TC-Timestamp"])
         data = json.dumps(params)
         service = "hunyuan"
-        date = datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d")
+        utc_datetime = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc)
+        date = utc_datetime.strftime("%Y-%m-%d")
         signature = self._get_tc3_signature(params, header, data, date)
 
         secret_id = self.config.api_key.get_secret_value()
@@ -465,7 +468,7 @@ class TencentModel(HttpServiceModel):
         )
         return self._call_api(api_url, request_data)
 
-    def _is_valid_response(cls, http_response):
+    def _is_valid_response(self, http_response):
         if http_response.status_code != 200:
             return False
 
@@ -478,7 +481,7 @@ class TencentModel(HttpServiceModel):
 
 @RemoteLanguageModel.register("tencent-lke")
 class TencentLKEModel(OpenAICompatibleModel):
-    # reference: https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu
+    # reference: https://cloud.tencent.com/document/product/1772/115963
     META = RemoteLanguageModelMetaInfo(
         api_url="https://api.lkeap.cloud.tencent.com/v1",
         language_models=[
