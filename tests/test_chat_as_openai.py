@@ -1,12 +1,13 @@
 import pytest
 
-from ullm.base import (
+from ullm import (
     AssistantMessage,
     GenerationResult,
     HttpServiceModel,
+    OpenAIRequestBody,
+    OpenAIResponseBody,
     RemoteLanguageModelConfig,
 )
-from ullm.openai import OpenAIRequestBody, OpenAIResponseBody
 from ullm.types import ToolCall
 
 
