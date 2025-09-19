@@ -203,19 +203,14 @@ class GenerateConfig(BaseModel):
 class GenerationResult(BaseModel):
     model: str
     stop_reason: str
-    message: Optional[AssistantMessage] = None
+    message: AssistantMessage
     reasoning_content: Optional[str] = ""
-    tool_calls: Optional[List[ToolCall]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     original_result: Json[Any] = None
     citations: Optional[List[Citation]] = None
 
-    @model_validator(mode="after")
-    def check_content_or_tool_calls(self):
-        assert self.message or self.content or self.tool_calls
-        return self
 
     def _filter_parts(self, part_type) -> List:
         if not self.message or not self.message.content:
@@ -243,6 +238,9 @@ class GenerationResult(BaseModel):
         """
         return "\n".join([text.text for text in self._filter_parts(TextPart)])
 
+    @computed_field(return_type=List[ToolCall] | None)
+    def tool_calls(self) -> List[ToolCall] | None:
+        return self.message.tool_calls
 
     def to_message(self) -> AssistantMessage:
         if self.message:
