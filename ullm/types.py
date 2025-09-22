@@ -204,12 +204,46 @@ class GenerationResult(BaseModel):
     model: str
     stop_reason: str
     message: AssistantMessage
-    reasoning_content: Optional[str] = ""
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
     original_result: Json[Any] = None
-    citations: Optional[List[Citation]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def build_message_from_legacy_fields(cls, data):
+        """
+        兼容旧设计：允许在初始化时传入顶层 content/tool_calls/reasoning_content/citations，并转为 message
+        """
+        if not isinstance(data, dict):
+            return data
+
+        data = deepcopy(data)
+        legacy_content = data.pop("content", None)
+        legacy_tool_calls = data.pop("tool_calls", None)
+        legacy_reasoning_content = data.pop("reasoning_content", None)
+        legacy_citations = data.pop("citations", None)
+
+        if data.get("message") is not None:
+            return data
+
+        message_payload = {}
+        content_parts = []
+        if isinstance(legacy_content, str):
+            if legacy_content != "":
+                content_parts.append({"type": "text", "text": legacy_content})
+            message_payload["content"] = content_parts
+
+        if legacy_tool_calls:
+            message_payload["tool_calls"] = legacy_tool_calls
+        if legacy_reasoning_content:
+            message_payload["reasoning_content"] = legacy_reasoning_content
+        if legacy_citations:
+            message_payload["citations"] = legacy_citations
+
+        data["message"] = message_payload
+
+        return data
 
 
     def _filter_parts(self, part_type) -> List:
@@ -241,6 +275,14 @@ class GenerationResult(BaseModel):
     @computed_field(return_type=List[ToolCall] | None)
     def tool_calls(self) -> List[ToolCall] | None:
         return self.message.tool_calls
+
+    @computed_field(return_type=str | None)
+    def reasoning_content(self) -> str | None:
+        return self.message.reasoning_content
+
+    @computed_field(return_type=List[Citation] | None)
+    def citations(self) -> List[Citation] | None:
+        return self.message.citations
 
     def to_message(self) -> AssistantMessage:
         if self.message:
