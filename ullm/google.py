@@ -23,6 +23,7 @@ from .types import (
     ToolChoice,
     ToolMessage,
     UserMessage,
+    Thinking,
 )
 
 
@@ -232,6 +233,37 @@ class GoogleSafetySetting(BaseModel):
     ]
 
 
+class ThinkingConfig(BaseModel):
+    """
+    Config for thinking features.
+    Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.
+    The number of thoughts tokens that the model should generate.
+    """
+    include_thoughts: Annotated[
+        bool | None,
+        Field(
+            description="Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.",
+            serialization_alias="includeThoughts"
+        )
+    ] = None
+    thinking_budget: Annotated[
+        int | None,
+        Field(
+            description="The number of thoughts tokens that the model should generate.",
+            serialization_alias="thinkingBudget"
+        )
+    ] = None
+
+    @classmethod
+    def from_standard(cls, thinking: Thinking) -> "ThinkingConfig":
+        if thinking.type == "disabled":
+            return cls(include_thoughts=None, thinking_budget=None)
+        return cls(
+            include_thoughts=not bool(thinking.exclude),
+            thinking_budget=thinking.max_tokens
+        )
+
+
 class GoogleGenerationConfig(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/GenerationConfig
     stop_sequences: Optional[List[str]] = Field(None, serialization_alias="stopSequences")
@@ -245,7 +277,14 @@ class GoogleGenerationConfig(BaseModel):
         None, serialization_alias="topP"
     )
     top_k: Optional[PositiveInt] = Field(None, serialization_alias="topK")
-
+    response_modalities: Annotated[
+        List[Literal["TEXT", "IMAGE"]] | None,
+        Field(serialization_alias="responseModalities")
+    ] = None
+    thinking_config: Annotated[
+        ThinkingConfig | None,
+        Field(serialization_alias="thinkingConfig")
+    ] = None
 
 class GoogleRequestBody(BaseModel):
     # https://platform.openai.com/docs/api-reference/chat/create
@@ -389,6 +428,7 @@ class GoogleModel(HttpServiceModel):
         "gemini-2.5-flash-preview-05-20",
         "gemini-2.5-pro",
         "gemini-2.5-flash-lite-preview-06-17",
+        "gemini-2.5-flash-image-preview",
     ]
 
     META = RemoteLanguageModelMetaInfo(
@@ -440,7 +480,25 @@ class GoogleModel(HttpServiceModel):
             response_mime_type = "application/json"
 
         # NOTE: role is not required for system_instruction
-        system_instruction = None if not system else GoogleContent(text=system)
+        system_instruction = None if not system else GoogleContent(parts=[GoogleContentPart(text=system)])
+
+        if config.modalities:
+            modalitie_mapping = {
+                "text": "TEXT",
+                "image": "IMAGE",
+                "audio": "AUDIO",
+            }
+            modalities = [
+                modalitie_mapping.get(modality, "MODALITY_UNSPECIFIED")
+                for modality in config.modalities
+            ]
+        else:
+            modalities = None
+
+        if config.thinking:
+            thinking_config = ThinkingConfig.from_standard(config.thinking)
+        else:
+            thinking_config = None
 
         return {
             "system_instruction": system_instruction,
@@ -451,5 +509,7 @@ class GoogleModel(HttpServiceModel):
                 temperature=config.temperature or self.config.temperature,
                 top_p=config.top_p or self.config.top_p,
                 top_k=config.top_k or self.config.top_k,
+                response_modalities=modalities,
+                thinking_config=thinking_config,
             ),
         }
