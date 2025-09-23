@@ -23,8 +23,8 @@ from pydantic import (
 )
 
 from .types import (
-    ChatMessage,
     AssistantMessage,
+    ChatMessage,
     GenerateConfig,
     GenerationResult,
     ImagePart,
@@ -492,7 +492,7 @@ class HttpServiceModel(RemoteLanguageModel):
             model=self.model,
             stop_reason="error",
             message=AssistantMessage(
-                content=[TextPart(text=f'Error {http_response.status_code}: {http_response.text}')]
+                content=[TextPart(text=f"Error {http_response.status_code}: {http_response.text}")]
             ),
         )
 

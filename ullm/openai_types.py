@@ -15,12 +15,12 @@ from .types import (
     ImagePart,
     JsonSchemaObject,
     TextPart,
+    Thinking,
     Tool,
     ToolCall,
     ToolChoice,
     ToolMessage,
     UserMessage,
-    Thinking,
 )
 
 # === OpenAI types ===
@@ -270,19 +270,21 @@ class OpenRouterReasoning(BaseModel):
     https://openrouter.ai/docs/use-cases/reasoning-tokens#reasoning-effort-level
     NOTE: Only supported by openrouter.
     Configuration for model reasoning/thinking tokens
-
-    effort enum Optional:OpenAI-style reasoning effort setting
-        Allowed: high, medium, low
-
-    max_tokens integer Optional: Non-OpenAI-style reasoning effort setting. Cannot be used simultaneously with effort.
-
-    exclude: boolean Optional: Whether to exclude reasoning from the response
-        Default: false
     """
 
-    effort: Optional[Literal["high", "medium", "low"]] = None
-    max_tokens: Optional[int] = None
-    exclude: Optional[bool] = False
+    effort: Annotated[
+        Literal["high", "medium", "low"] | None,
+        Field(description="OpenAI-style reasoning effort setting"),
+    ] = None
+    max_tokens: Annotated[
+        int | None,
+        Field(
+            description="Non-OpenAI-style reasoning effort setting. Cannot be used simultaneously with effort."  # noqa: E501
+        ),
+    ] = None
+    exclude: Annotated[
+        bool | None, Field(description="Whether to exclude reasoning from the response")
+    ] = False
 
     @classmethod
     def from_standard(cls, thinking: Thinking):

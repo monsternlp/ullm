@@ -18,12 +18,12 @@ from .types import (
     ImagePart,
     JsonSchemaObject,
     TextPart,
+    Thinking,
     Tool,
     ToolCall,
     ToolChoice,
     ToolMessage,
     UserMessage,
-    Thinking,
 )
 
 
@@ -71,7 +71,7 @@ class GoogleContentPart(BaseModel):
         return data
 
     @classmethod
-    def from_standard(cls, part: TextPart | ImagePart | ToolCall) -> 'GoogleContentPart':
+    def from_standard(cls, part: TextPart | ImagePart | ToolCall) -> "GoogleContentPart":
         if isinstance(part, TextPart):
             return cls(text=part.text)
         elif isinstance(part, ImagePart):
@@ -79,7 +79,7 @@ class GoogleContentPart(BaseModel):
                 return cls(
                     inline_data=GoogleBlobPart(
                         mime_type=part.mime_type,
-                        data=base64.b64encode(part.data).decode('utf-8'),
+                        data=base64.b64encode(part.data).decode("utf-8"),
                     )
                 )
             return cls(
@@ -130,11 +130,13 @@ class GoogleContent(BaseModel):
             except (TypeError, json.JSONDecodeError):
                 response = {"content": response}
 
-            parts = [GoogleContentPart(
-                function_response=GoogleFunctionResponsePart(
-                    name=message.tool_name, response=response
+            parts = [
+                GoogleContentPart(
+                    function_response=GoogleFunctionResponsePart(
+                        name=message.tool_name, response=response
+                    )
                 )
-            )]
+            ]
 
         return cls(role=role, parts=parts)
 
@@ -236,32 +238,28 @@ class GoogleSafetySetting(BaseModel):
 class ThinkingConfig(BaseModel):
     """
     Config for thinking features.
-    Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.
-    The number of thoughts tokens that the model should generate.
     """
+
     include_thoughts: Annotated[
         bool | None,
         Field(
-            description="Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.",
-            serialization_alias="includeThoughts"
-        )
+            description="Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.",  # noqa: E501
+            serialization_alias="includeThoughts",
+        ),
     ] = None
     thinking_budget: Annotated[
         int | None,
         Field(
             description="The number of thoughts tokens that the model should generate.",
-            serialization_alias="thinkingBudget"
-        )
+            serialization_alias="thinkingBudget",
+        ),
     ] = None
 
     @classmethod
     def from_standard(cls, thinking: Thinking) -> "ThinkingConfig":
         if thinking.type == "disabled":
             return cls(include_thoughts=None, thinking_budget=None)
-        return cls(
-            include_thoughts=not bool(thinking.exclude),
-            thinking_budget=thinking.max_tokens
-        )
+        return cls(include_thoughts=not bool(thinking.exclude), thinking_budget=thinking.max_tokens)
 
 
 class GoogleGenerationConfig(BaseModel):
@@ -278,13 +276,12 @@ class GoogleGenerationConfig(BaseModel):
     )
     top_k: Optional[PositiveInt] = Field(None, serialization_alias="topK")
     response_modalities: Annotated[
-        List[Literal["TEXT", "IMAGE"]] | None,
-        Field(serialization_alias="responseModalities")
+        List[Literal["TEXT", "IMAGE"]] | None, Field(serialization_alias="responseModalities")
     ] = None
     thinking_config: Annotated[
-        ThinkingConfig | None,
-        Field(serialization_alias="thinkingConfig")
+        ThinkingConfig | None, Field(serialization_alias="thinkingConfig")
     ] = None
+
 
 class GoogleRequestBody(BaseModel):
     # https://platform.openai.com/docs/api-reference/chat/create
@@ -480,7 +477,9 @@ class GoogleModel(HttpServiceModel):
             response_mime_type = "application/json"
 
         # NOTE: role is not required for system_instruction
-        system_instruction = None if not system else GoogleContent(parts=[GoogleContentPart(text=system)])
+        system_instruction = (
+            None if not system else GoogleContent(parts=[GoogleContentPart(text=system)])
+        )
 
         if config.modalities:
             modalitie_mapping = {

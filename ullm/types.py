@@ -8,11 +8,11 @@ from pydantic import (
     BaseModel,
     Field,
     HttpUrl,
-    computed_field,
     Json,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
+    computed_field,
     model_validator,
 )
 
@@ -185,9 +185,11 @@ class ToolChoice(BaseModel):
 class Thinking(BaseModel):
     type: Annotated[
         Literal["disabled", "enabled", "auto"],
-        Field("disabled/enabled thinking, auto: let model decide")
+        Field("disabled/enabled thinking, auto: let model decide"),
     ] = "auto"
-    effort: Annotated[Literal["high", "medium", "low"] | None, Field("thinking effort, OpenAI Only")] = None
+    effort: Annotated[
+        Literal["high", "medium", "low"] | None, Field("thinking effort, OpenAI Only")
+    ] = None
     max_tokens: Annotated[int | None, Field("max thinking tokens, Google & Anthropic...")] = None
     exclude: Annotated[bool | None, Field("if True, exclude thinking content in response")] = False
 
@@ -205,7 +207,7 @@ class GenerateConfig(BaseModel):
     repetition_penalty: Optional[float] = None
     modalities: Annotated[
         List[Literal["text", "audio", "image"]] | None,
-        Field("Output types the model expected to generate.")
+        Field("Output types the model expected to generate."),
     ] = None
     response_format: Optional[Literal["text", "json_object"]] = "text"
     tools: Optional[List[Tool]] = None
@@ -227,7 +229,9 @@ class GenerationResult(BaseModel):
     @classmethod
     def build_message_from_legacy_fields(cls, data):
         """
-        兼容旧设计：允许在初始化时传入顶层 content/tool_calls/reasoning_content/citations，并转为 message
+        兼容旧设计：允许初始化时传入
+        content/tool_calls/reasoning_content/citations
+        并转为 message
         """
         if not isinstance(data, dict):
             return data
@@ -258,7 +262,6 @@ class GenerationResult(BaseModel):
         data["message"] = message_payload
 
         return data
-
 
     def _filter_parts(self, part_type) -> List:
         if not self.message or not self.message.content:
