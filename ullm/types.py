@@ -182,6 +182,16 @@ class ToolChoice(BaseModel):
     functions: Optional[List[str]] = Field(default_factory=list)
 
 
+class Thinking(BaseModel):
+    type: Annotated[
+        Literal["disabled", "enabled", "auto"],
+        Field("disabled/enabled thinking, auto: let model decide")
+    ] = "auto"
+    effort: Annotated[Literal["high", "medium", "low"] | None, Field("thinking effort, OpenAI Only")] = None
+    max_tokens: Annotated[int | None, Field("max thinking tokens, Google & Anthropic...")] = None
+    exclude: Annotated[bool | None, Field("if True, exclude thinking content in response")] = False
+
+
 class GenerateConfig(BaseModel):
     temperature: Optional[NonNegativeFloat] = None
     max_tokens: Optional[PositiveInt] = None
@@ -193,11 +203,15 @@ class GenerateConfig(BaseModel):
     frequency_penalty: Optional[float] = None
     presence_penalty: Optional[float] = None
     repetition_penalty: Optional[float] = None
+    modalities: Annotated[
+        List[Literal["text", "audio", "image"]] | None,
+        Field("Output types the model expected to generate.")
+    ] = None
     response_format: Optional[Literal["text", "json_object"]] = "text"
     tools: Optional[List[Tool]] = None
     tool_choice: Optional[ToolChoice] = None
     extra: Optional[dict] = None
-    thinking_type: Optional[Literal["disabled", "enabled", "auto"]] = None
+    thinking: Optional[Thinking] = None
 
 
 class GenerationResult(BaseModel):
