@@ -18,6 +18,7 @@ from .openai_types import (
     OpenAIToolChoice,
     OpenAIToolMessage,
     OpenAIUserMessage,
+    OpenRouterReasoning,
 )
 from .types import (
     AssistantMessage,
@@ -91,7 +92,10 @@ class OpenAICompatibleModel(HttpServiceModel):
     def _convert_generation_config(
         self, config: GenerateConfig, system: Optional[str] = None
     ) -> Dict[str, Any]:
-        return {
+        """
+        convert GenerateConfig to supported params in OpenAIRequestBody
+        """
+        params: Dict[str, Any] = {
             "model": self.model,
             "frequency_penalty": config.frequency_penalty,
             "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
@@ -100,7 +104,12 @@ class OpenAICompatibleModel(HttpServiceModel):
             "stop": config.stop_sequences or self.config.stop_sequences,
             "temperature": config.temperature or self.config.temperature,
             "top_p": config.top_p or self.config.top_p,
+            "modalities": config.modalities,
         }
+
+        if config.thinking:
+            params["reasoning"] = OpenRouterReasoning.from_standard(config.thinking)
+        return params
 
 
 @RemoteLanguageModel.register("openai")

@@ -15,6 +15,7 @@ from .types import (
     ImagePart,
     JsonSchemaObject,
     TextPart,
+    Thinking,
     Tool,
     ToolCall,
     ToolChoice,
@@ -34,7 +35,7 @@ class OpenAISystemMessage(BaseModel):
 
 
 class OpenAIImageURL(BaseModel):
-    url: str
+    url: HttpUrl | str = Field(description="Data URL(base64) or URL of the image")
     detail: Optional[Literal["auto", "low", "high"]] = Field(default="auto")
 
 
@@ -137,31 +138,47 @@ class OpenAIToolCall(ToolCall):
         )
 
 
-class OpenAIAssistantMessage(AssistantMessage):
+class OpenAIAssistantMessage(BaseModel):
+    # Strictly follow OpenAI Chat Completions message schema for assistant
+    # https://platform.openai.com/docs/api-reference/chat/object
+    role: Literal["assistant"] = "assistant"
+    content: Optional[str] = None
     tool_calls: Optional[List[OpenAIToolCall]] = None
-    reasoning_content: Optional[str] = None
+
+    # Extra fields from openrouter
+    # https://openrouter.ai/docs/features/multimodal/image-generation
+    images: Optional[List[OpenAIImagePart]] = None
+    # NOTE:
+    #   - openai 文档中未观察到 reasoning 相关返回值
+    #   - openrouter 返回值中同时有 reasoning 和 reasoning_details
+    #     - reasoning: 未在文档中观察到
+    #     - reasoning_details: https://openrouter.ai/docs/use-cases/reasoning-tokens#reasoning_details-array-structure
+    # TODO: reasoning_details -> reasoning
+    reasoning: Optional[Any] = None
 
     @classmethod
     def from_standard(cls, message: AssistantMessage):
         tool_calls = None
         if message.tool_calls:
-            tool_calls = []
-            for tool_call in message.tool_calls:
-                tool_calls.append(OpenAIToolCall.from_standard(tool_call))
+            tool_calls = [OpenAIToolCall.from_standard(tc) for tc in message.tool_calls]
 
-        return cls(
-            role=message.role,
-            content=message.content,
-            tool_calls=tool_calls,
-        )
+        return cls(role="assistant", content=message.content, tool_calls=tool_calls)
 
     def to_standard(self) -> AssistantMessage:
-        tool_calls = None
+        parts: List[TextPart | ImagePart] = []
+
+        if isinstance(self.content, str) and self.content != "":
+            parts.append(TextPart(text=self.content))
+
+        # NOTE: Only for OpenRouter: https://openrouter.ai/docs/features/multimodal/image-generation
+        if self.images:
+            parts.extend(image.to_standard() for image in self.images)
+
+        tool_calls: Optional[List[ToolCall]] = None
         if self.tool_calls:
-            tool_calls = [tool_call.to_standard() for tool_call in self.tool_calls]
-        return AssistantMessage(
-            content=self.content, tool_calls=tool_calls, reasoning_content=self.reasoning_content
-        )
+            tool_calls = [tc.to_standard() for tc in self.tool_calls]
+
+        return AssistantMessage(content=parts, tool_calls=tool_calls)
 
 
 class OpenAIToolMessage(BaseModel):
@@ -248,11 +265,45 @@ class OpenAIToolChoice(BaseModel):
         return ToolChoice(mode="any", functions=[self.function["name"]])
 
 
+class OpenRouterReasoning(BaseModel):
+    """
+    https://openrouter.ai/docs/use-cases/reasoning-tokens#reasoning-effort-level
+    NOTE: Only supported by openrouter.
+    Configuration for model reasoning/thinking tokens
+    """
+
+    effort: Annotated[
+        Literal["high", "medium", "low"] | None,
+        Field(description="OpenAI-style reasoning effort setting"),
+    ] = None
+    max_tokens: Annotated[
+        int | None,
+        Field(
+            description="Non-OpenAI-style reasoning effort setting. Cannot be used simultaneously with effort."  # noqa: E501
+        ),
+    ] = None
+    exclude: Annotated[
+        bool | None, Field(description="Whether to exclude reasoning from the response")
+    ] = False
+
+    @classmethod
+    def from_standard(cls, thinking: Thinking):
+        return cls(
+            effort=thinking.effort,
+            max_tokens=thinking.max_tokens,
+            exclude=thinking.exclude,
+        )
+
+
 class OpenAIRequestBody(BaseModel):
     # https://platform.openai.com/docs/api-reference/chat/create
+    # https://openrouter.ai/docs/api-reference/chat-completion
     # NOTE:
+    # 0. 受实际使用场景影响，目前优先适配 openrouter api 而不是 openai
     # 1. gpt-4-vision 不能设置 logprobs/logit_bias/tools/tool_choice/response_format 几个参数
     # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
+    # 3. `reasoning` 只被 openrouter 支持，openai api 中对应参数为 `reasoning_effort`
+    # TODO: 严格区分 openai 和 openrouter 的差异参数
     messages: Annotated[List[OpenAIChatMessage], Field(min_length=1)]
     model: str
     frequency_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
@@ -261,7 +312,9 @@ class OpenAIRequestBody(BaseModel):
     top_logprobs: Optional[Annotated[int, Field(ge=0, le=20)]] = Field(default=None)
     max_tokens: Optional[int] = Field(default=None)
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
+    modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
+    reasoning: Optional[OpenRouterReasoning] = Field(default=None)
     response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(
         default=None
     )
@@ -338,20 +391,12 @@ class OpenAIResponseBody(BaseModel):
     object: Literal["chat.completion"]
     usage: Optional[OpenAIResponseUsage] = Field(default=None)
 
-    def to_standard(self, model: str = None):
-        tool_calls = None
-        if self.choices[0].message.tool_calls:
-            tool_calls = []
-            for tool_call in self.choices[0].message.tool_calls:
-                if tool_call:
-                    tool_calls.append(tool_call.to_standard())
-
+    def to_standard(self, model: str = None) -> GenerationResult:
+        assistant_message = self.choices[0].message.to_standard()
         return GenerationResult(
             model=model or self.model,
             stop_reason=self.choices[0].finish_reason,
-            content=self.choices[0].message.content,
-            reasoning_content=self.choices[0].message.reasoning_content,
-            tool_calls=tool_calls,
+            message=assistant_message,
             input_tokens=getattr(self.usage, "prompt_tokens", None),
             output_tokens=getattr(self.usage, "completion_tokens", None),
             total_tokens=getattr(self.usage, "total_tokens", None),

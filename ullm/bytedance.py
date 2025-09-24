@@ -121,12 +121,12 @@ class ByteDanceModel(OpenAICompatibleModel):
             "temperature": config.temperature or self.config.temperature,
             "top_p": config.top_p or self.config.top_p,
         }
-        if config.thinking_type:
+        if config.thinking:
             if self.model in ("doubao-seed-1-6-250615", "doubao-1-5-thinking-vision-pro-250428"):
-                generation_config["thinking"] = {"type": config.thinking_type}
+                generation_config["thinking"] = {"type": config.thinking.type}
             elif self.model in ("doubao-seed-1-6-flash-250615", "doubao-1-5-thinking-pro-m-250428"):
                 generation_config["thinking"] = {
-                    "type": config.thinking_type if config.thinking_type != "auto" else "disabled"
+                    "type": config.thinking.type if config.thinking.type != "auto" else "disabled"
                 }
 
         return generation_config

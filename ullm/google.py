@@ -18,6 +18,7 @@ from .types import (
     ImagePart,
     JsonSchemaObject,
     TextPart,
+    Thinking,
     Tool,
     ToolCall,
     ToolChoice,
@@ -69,6 +70,31 @@ class GoogleContentPart(BaseModel):
         assert len(keys_with_value) == 1
         return data
 
+    @classmethod
+    def from_standard(cls, part: TextPart | ImagePart | ToolCall) -> "GoogleContentPart":
+        if isinstance(part, TextPart):
+            return cls(text=part.text)
+        elif isinstance(part, ImagePart):
+            if part.data:
+                return cls(
+                    inline_data=GoogleBlobPart(
+                        mime_type=part.mime_type,
+                        data=base64.b64encode(part.data).decode("utf-8"),
+                    )
+                )
+            return cls(
+                file_data=GoogleFileDataPart(
+                    mime_type=part.mime_type,
+                    file_uri=str(part.url),
+                )
+            )
+        elif isinstance(part, ToolCall):
+            return cls(
+                function_call=GoogleFunctionCallPart(
+                    name=part.function.name, args=part.function.arguments
+                )
+            )
+
 
 class GoogleContent(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/Content
@@ -87,45 +113,15 @@ class GoogleContent(BaseModel):
     @classmethod
     @validate_call
     def from_standard(cls, message: ChatMessage):
-        role, parts = None, []
         if isinstance(message, UserMessage):
             role = "user"
-            for part in message.content:
-                if isinstance(part, TextPart):
-                    parts.append({"text": part.text})
-                elif isinstance(part, ImagePart):
-                    if part.data:
-                        parts.append(
-                            {
-                                "inlineData": {
-                                    "mimeType": part.mime_type,
-                                    "data": base64.b64encode(part.data).decode("utf-8"),
-                                }
-                            }
-                        )
-                    else:
-                        parts.append(
-                            {
-                                "fileData": {
-                                    "mimeType": part.mime_type,
-                                    "fileUri": part.url,
-                                }
-                            }
-                        )
+            parts = [GoogleContentPart.from_standard(part) for part in message.content]
         elif isinstance(message, AssistantMessage):
             role = "model"
+            parts = [GoogleContentPart.from_standard(part) for part in message.content]
             if message.tool_calls:
                 for tool_call in message.tool_calls:
-                    parts.append(
-                        {
-                            "functionCall": {
-                                "name": tool_call.function.name,
-                                "args": tool_call.function.arguments,
-                            }
-                        }
-                    )
-            else:
-                parts.append({"text": message.content})
+                    parts.append(GoogleContentPart.from_standard(tool_call))
         elif isinstance(message, ToolMessage):
             role = "function"
             response = message.tool_result
@@ -134,14 +130,13 @@ class GoogleContent(BaseModel):
             except (TypeError, json.JSONDecodeError):
                 response = {"content": response}
 
-            parts.append(
-                {
-                    "functionResponse": {
-                        "name": message.tool_name,
-                        "response": response,
-                    }
-                }
-            )
+            parts = [
+                GoogleContentPart(
+                    function_response=GoogleFunctionResponsePart(
+                        name=message.tool_name, response=response
+                    )
+                )
+            ]
 
         return cls(role=role, parts=parts)
 
@@ -240,6 +235,33 @@ class GoogleSafetySetting(BaseModel):
     ]
 
 
+class ThinkingConfig(BaseModel):
+    """
+    Config for thinking features.
+    """
+
+    include_thoughts: Annotated[
+        bool | None,
+        Field(
+            description="Indicates whether to include thoughts in the response. If true, thoughts are returned only when available.",  # noqa: E501
+            serialization_alias="includeThoughts",
+        ),
+    ] = None
+    thinking_budget: Annotated[
+        int | None,
+        Field(
+            description="The number of thoughts tokens that the model should generate.",
+            serialization_alias="thinkingBudget",
+        ),
+    ] = None
+
+    @classmethod
+    def from_standard(cls, thinking: Thinking) -> "ThinkingConfig":
+        if thinking.type == "disabled":
+            return cls(include_thoughts=None, thinking_budget=None)
+        return cls(include_thoughts=not bool(thinking.exclude), thinking_budget=thinking.max_tokens)
+
+
 class GoogleGenerationConfig(BaseModel):
     # https://ai.google.dev/api/rest/v1beta/GenerationConfig
     stop_sequences: Optional[List[str]] = Field(None, serialization_alias="stopSequences")
@@ -253,6 +275,12 @@ class GoogleGenerationConfig(BaseModel):
         None, serialization_alias="topP"
     )
     top_k: Optional[PositiveInt] = Field(None, serialization_alias="topK")
+    response_modalities: Annotated[
+        List[Literal["TEXT", "IMAGE"]] | None, Field(serialization_alias="responseModalities")
+    ] = None
+    thinking_config: Annotated[
+        ThinkingConfig | None, Field(serialization_alias="thinkingConfig")
+    ] = None
 
 
 class GoogleRequestBody(BaseModel):
@@ -333,22 +361,39 @@ class GoogleGenerateContentResponseBody(BaseModel):
     @validate_call
     def to_standard(self, model: str) -> GenerationResult:
         candidate = self.candidates[0]
-        tool_calls = None
-        if candidate.content.parts[0].function_call:
-            tool_calls = [
-                ToolCall(
-                    type="function", function=candidate.content.parts[0].function_call.to_standard()
+        tool_calls: List[ToolCall] = []
+        assistant_parts: List[Any] = []
+
+        for part in candidate.content.parts:
+            if part.function_call:
+                tool_calls.append(
+                    ToolCall(type="function", function=part.function_call.to_standard())
                 )
-            ]
+            elif part.text:
+                assistant_parts.append(TextPart(text=part.text))
+            elif part.inline_data:
+                # TODO: inline_data or file_data supports more than just image
+                assistant_parts.append(
+                    ImagePart(
+                        data=base64.b64decode(part.inline_data.data),
+                        mime_type=part.inline_data.mime_type,
+                    )
+                )
+            elif part.file_data:
+                assistant_parts.append(
+                    ImagePart(
+                        url=part.file_data.file_uri,
+                        mime_type=part.file_data.mime_type,
+                    )
+                )
 
         return GenerationResult(
             model=model,
             stop_reason=candidate.finish_reason,
-            content=candidate.content.parts[0].text,
+            message=AssistantMessage(content=assistant_parts, tool_calls=tool_calls),
             input_tokens=self.usage_metadata.prompt_token_count,
             output_tokens=self.usage_metadata.candidates_token_count,
             total_tokens=self.usage_metadata.total_token_count,
-            tool_calls=tool_calls,
         )
 
 
@@ -380,6 +425,7 @@ class GoogleModel(HttpServiceModel):
         "gemini-2.5-flash-preview-05-20",
         "gemini-2.5-pro",
         "gemini-2.5-flash-lite-preview-06-17",
+        "gemini-2.5-flash-image-preview",
     ]
 
     META = RemoteLanguageModelMetaInfo(
@@ -430,8 +476,31 @@ class GoogleModel(HttpServiceModel):
         if config.response_format == "json_object":
             response_mime_type = "application/json"
 
+        # NOTE: role is not required for system_instruction
+        system_instruction = (
+            None if not system else GoogleContent(parts=[GoogleContentPart(text=system)])
+        )
+
+        if config.modalities:
+            modalitie_mapping = {
+                "text": "TEXT",
+                "image": "IMAGE",
+                "audio": "AUDIO",
+            }
+            modalities = [
+                modalitie_mapping.get(modality, "MODALITY_UNSPECIFIED")
+                for modality in config.modalities
+            ]
+        else:
+            modalities = None
+
+        if config.thinking:
+            thinking_config = ThinkingConfig.from_standard(config.thinking)
+        else:
+            thinking_config = None
+
         return {
-            "system_instruction": system,
+            "system_instruction": system_instruction,
             "generation_config": GoogleGenerationConfig(
                 stop_sequences=config.stop_sequences or self.config.stop_sequences,
                 response_mime_type=response_mime_type,
@@ -439,5 +508,7 @@ class GoogleModel(HttpServiceModel):
                 temperature=config.temperature or self.config.temperature,
                 top_p=config.top_p or self.config.top_p,
                 top_k=config.top_k or self.config.top_k,
+                response_modalities=modalities,
+                thinking_config=thinking_config,
             ),
         }
