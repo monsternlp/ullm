@@ -61,6 +61,32 @@ class UserMessage(BaseModel):
 
         return data
 
+    def _filter_parts(self, part_type) -> List:
+        if not self.content:
+            return []
+        return [part for part in self.content if isinstance(part, part_type)]
+
+    @computed_field(return_type=List[ImagePart])
+    def images(self) -> List[ImagePart]:
+        """
+        从 message 过滤得到的所有 ImagePart
+        """
+        return self._filter_parts(ImagePart)
+
+    @computed_field(return_type=List[TextPart])
+    def texts(self) -> List[TextPart]:
+        """
+        从 message 过滤得到的所有 TextPart
+        """
+        return self._filter_parts(TextPart)
+
+    @computed_field(return_type=str)
+    def text(self) -> str:
+        """
+        全部文本信息
+        """
+        return "\n".join([text.text for text in self._filter_parts(TextPart)])
+
 
 class FunctionCall(BaseModel):
     name: str
@@ -124,6 +150,32 @@ class AssistantMessage(BaseModel):
     def check_content_or_tool_calls(self):
         assert self.content or self.tool_calls
         return self
+
+    def _filter_parts(self, part_type) -> List:
+        if not self.content:
+            return []
+        return [part for part in self.content if isinstance(part, part_type)]
+
+    @computed_field(return_type=List[ImagePart])
+    def images(self) -> List[ImagePart]:
+        """
+        从 message 过滤得到的所有 ImagePart
+        """
+        return self._filter_parts(ImagePart)
+
+    @computed_field(return_type=List[TextPart])
+    def texts(self) -> List[TextPart]:
+        """
+        从 message 过滤得到的所有 TextPart
+        """
+        return self._filter_parts(TextPart)
+
+    @computed_field(return_type=str)
+    def text(self) -> str:
+        """
+        全部文本信息
+        """
+        return "\n".join([text.text for text in self._filter_parts(TextPart)])
 
 
 class ToolMessage(BaseModel):
