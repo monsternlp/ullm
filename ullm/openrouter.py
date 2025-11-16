@@ -9,11 +9,17 @@ from .base import (
 from .openai import OpenAICompatibleModel
 from .openai_types import (
     OpenAIAssistantMessage,
+    OpenAIImagePart,
     OpenAIRequestBody,
     OpenAIResponseBody,
+    OpenAIToolCall,
 )
 from .types import (
+    AssistantMessage,
     GenerateConfig,
+    ImagePart,
+    TextPart,
+    ToolCall,
 )
 
 
@@ -66,10 +72,49 @@ class OpenRouterRequestBody(OpenAIRequestBody):
     route: Optional[Literal["fallback"]] = None
 
 
+class OpenRouterAssistantMessage(OpenAIAssistantMessage):
+    # Extra fields from openrouter
+    # https://openrouter.ai/docs/features/multimodal/image-generation
+    images: Optional[List[OpenAIImagePart]] = None
+    # NOTE:
+    #   - openai 文档中未观察到 reasoning 相关返回值
+    #   - openrouter 返回值中同时有 reasoning 和 reasoning_details
+    #     - reasoning: 未在文档中观察到
+    #     - reasoning_details: https://openrouter.ai/docs/use-cases/reasoning-tokens#reasoning_details-array-structure
+    # TODO: reasoning_details -> reasoning
+    reasoning: Optional[Any] = None
+
+    @classmethod
+    def from_standard(cls, message: AssistantMessage):
+        tool_calls = None
+        if message.tool_calls:
+            tool_calls = [OpenAIToolCall.from_standard(tc) for tc in message.tool_calls]
+
+        return cls(
+            role="assistant", content=message.text, images=message.images, tool_calls=tool_calls
+        )
+
+    def to_standard(self) -> AssistantMessage:
+        parts: List[TextPart | ImagePart] = []
+
+        if isinstance(self.content, str) and self.content != "":
+            parts.append(TextPart(text=self.content))
+
+        # NOTE: Only for OpenRouter: https://openrouter.ai/docs/features/multimodal/image-generation
+        if self.images:
+            parts.extend(image.to_standard() for image in self.images)
+
+        tool_calls: Optional[List[ToolCall]] = None
+        if self.tool_calls:
+            tool_calls = [tc.to_standard() for tc in self.tool_calls]
+
+        return AssistantMessage(content=parts, tool_calls=tool_calls)
+
+
 class OpenRouterResponseChoice(BaseModel):
     finish_reason: Optional[str] = None
     index: int
-    message: OpenAIAssistantMessage
+    message: OpenRouterAssistantMessage
 
 
 class OpenRouterResponseBody(OpenAIResponseBody):
