@@ -30,8 +30,6 @@ from .types import (
     UserMessage,
 )
 
-# === OpenAI model implementations ===
-
 
 @RemoteLanguageModel.register("openai-compatible")
 class OpenAICompatibleModel(HttpServiceModel):

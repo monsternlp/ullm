@@ -16,8 +16,6 @@ from pydantic import (
     model_validator,
 )
 
-# === Base ullm types ===
-
 
 class TextPart(BaseModel):
     type: Literal["text"] = "text"

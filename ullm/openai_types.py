@@ -23,8 +23,6 @@ from .types import (
     UserMessage,
 )
 
-# === OpenAI types ===
-
 
 class OpenAISystemMessage(BaseModel):
     role: Literal["system"] = "system"
