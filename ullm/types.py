@@ -16,8 +16,6 @@ from pydantic import (
     model_validator,
 )
 
-# === Base ullm types ===
-
 
 class TextPart(BaseModel):
     type: Literal["text"] = "text"
@@ -36,14 +34,15 @@ class ImagePart(BaseModel):
     def check_image_data(cls, data):
         data = deepcopy(data)
         assert data.get("url") or data.get("path") or data.get("data")
-        if data.get("path"):
+        if data.get("path") and not data.get("data"):
             with open(data["path"], "rb") as image_file:
                 data["data"] = image_file.read()
 
-        if data.get("data"):
-            data["mime_type"] = magic.from_buffer(data["data"], mime=True)
-        else:
-            data["mime_type"], _ = mimetypes.guess_type(str(data["url"]))
+        if not data.get("mime_type"):
+            if data.get("data"):
+                data["mime_type"] = magic.from_buffer(data["data"], mime=True)
+            else:
+                data["mime_type"], _ = mimetypes.guess_type(str(data["url"]))
 
         return data
 
