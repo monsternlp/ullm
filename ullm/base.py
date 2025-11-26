@@ -1,3 +1,4 @@
+import os
 import random
 from abc import ABC, abstractclassmethod, abstractmethod
 from itertools import chain
@@ -502,12 +503,26 @@ class HttpServiceModel(RemoteLanguageModel):
         if self.config.http_proxy:
             proxies = {"http": str(self.config.http_proxy), "https": str(self.config.http_proxy)}
 
+        connect_timeout = None
+        read_timeout = None
+        if os.environ.get("ULLM_HTTP_CONNECT_TIMEOUT"):
+            connect_timeout = int(os.environ["ULLM_HTTP_CONNECT_TIMEOUT"])
+        if os.environ.get("ULLM_HTTP_READ_TIMEOUT"):
+            read_timeout = int(os.environ["ULLM_HTTP_READ_TIMEOUT"])
+
+        if not connect_timeout and not read_timeout:
+            if os.environ.get("ULLM_HTTP_TIMEOUT"):
+                connect_timeout = read_timeout = int(os.environ["ULLM_HTTP_TIMEOUT"])
+            else:
+                connect_timeout = read_timeout = 5
+
         response = requests.post(
             api_url,
             params=request_data.params,
             headers=request_data.headers,
             json=request_data.body,
             proxies=proxies,
+            timeout=(connect_timeout, read_timeout),
         )
         result = None
         if self._is_valid_response(response):
