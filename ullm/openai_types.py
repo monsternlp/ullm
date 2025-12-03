@@ -294,9 +294,7 @@ class OpenAIRequestBody(BaseModel):
     modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
     reasoning: Optional[OpenRouterReasoning] = Field(default=None)
-    response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = Field(
-        default=None
-    )
+    response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
     stream: Optional[bool] = Field(default=False)
