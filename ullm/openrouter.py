@@ -560,12 +560,20 @@ class OpenRouterModel(OpenAICompatibleModel):
         self, config: GenerateConfig, system: Optional[str] = None
     ) -> Dict[str, Any]:
         model_prefix = self._MODEL_PREFIX_MAP[self.model]
+        response_format = None
+        if config.response_format:
+            response_format = {"type": config.response_format}
+            if config.response_format == "json_schema":
+                response_format["json_schema"] = config.response_schema.model_dump(
+                    mode="json", by_alias=True
+                )
+
         return {
             "model": f"{model_prefix}/{self.model}",
             "frequency_penalty": config.frequency_penalty,
             "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
             "presence_penalty": config.presence_penalty,
-            "response_format": {"type": config.response_format} if config.response_format else None,
+            "response_format": response_format,
             "stop": config.stop_sequences or self.config.stop_sequences,
             "temperature": config.temperature or self.config.temperature,
             "top_p": config.top_p or self.config.top_p,
