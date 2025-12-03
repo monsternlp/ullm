@@ -514,7 +514,8 @@ class HttpServiceModel(RemoteLanguageModel):
             if os.environ.get("ULLM_HTTP_TIMEOUT"):
                 connect_timeout = read_timeout = int(os.environ["ULLM_HTTP_TIMEOUT"])
             else:
-                connect_timeout = read_timeout = 5
+                connect_timeout = 5
+                read_timeout = 60
 
         response = requests.post(
             api_url,

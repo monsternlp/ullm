@@ -4,6 +4,10 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
 import magic
+
+# FIXME: OpenAI 在结构化输出（response_format:json_schema）的时候要求的 JSON Schema 非常严格，
+#        这里直接使用 openai python sdk 里的内部函数，不过这种内部函数可能存在废弃或变更的可能性。
+from openai.lib._parsing import type_to_response_format_param
 from pydantic import (
     BaseModel,
     Field,
@@ -245,6 +249,18 @@ class Thinking(BaseModel):
     exclude: Annotated[bool | None, Field("if True, exclude thinking content in response")] = False
 
 
+class ResponseSchema(BaseModel):
+    name: str
+    description: Optional[str] = None
+    schema: dict = Field(description="符合 OpenAI 要求的 JsonSchema 定义")
+    strict: Optional[bool] = True
+
+    @classmethod
+    def from_pydantic_schema(cls, schema: BaseModel):
+        openai_response_format = type_to_response_format_param(schema)
+        return cls.model_validate(openai_response_format["json_schema"])
+
+
 class GenerateConfig(BaseModel):
     temperature: Optional[NonNegativeFloat] = None
     max_tokens: Optional[PositiveInt] = None
@@ -260,7 +276,8 @@ class GenerateConfig(BaseModel):
         List[Literal["text", "audio", "image"]] | None,
         Field("Output types the model expected to generate."),
     ] = None
-    response_format: Optional[Literal["text", "json_object"]] = "text"
+    response_format: Optional[Literal["text", "json_object", "json_schema"]] = "text"
+    response_schema: Optional[ResponseSchema] = None
     tools: Optional[List[Tool]] = None
     tool_choice: Optional[ToolChoice] = None
     extra: Optional[dict] = None
