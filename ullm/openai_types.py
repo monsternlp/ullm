@@ -252,7 +252,7 @@ class OpenRouterReasoning(BaseModel):
     """
 
     effort: Annotated[
-        Literal["high", "medium", "low"] | None,
+        Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
         Field(description="OpenAI-style reasoning effort setting"),
     ] = None
     max_tokens: Annotated[
@@ -264,14 +264,18 @@ class OpenRouterReasoning(BaseModel):
     exclude: Annotated[
         bool | None, Field(description="Whether to exclude reasoning from the response")
     ] = False
+    enabled: Annotated[bool | None, Field(description="Enable reasoning or not")] = False
 
     @classmethod
     def from_standard(cls, thinking: Thinking):
-        return cls(
-            effort=thinking.effort,
-            max_tokens=thinking.max_tokens,
-            exclude=thinking.exclude,
-        )
+        if thinking.type == "enabled" and (thinking.effort or thinking.max_tokens > 0):
+            return cls(
+                effort=thinking.effort,
+                max_tokens=thinking.max_tokens,
+                exclude=thinking.exclude,
+            )
+
+        return cls(effort="none", exclude=True, enabled=False)
 
 
 class OpenAIRequestBody(BaseModel):

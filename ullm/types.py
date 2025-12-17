@@ -243,7 +243,8 @@ class Thinking(BaseModel):
         Field("disabled/enabled thinking, auto: let model decide"),
     ] = "auto"
     effort: Annotated[
-        Literal["high", "medium", "low"] | None, Field("thinking effort, OpenAI Only")
+        Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
+        Field("thinking effort, OpenAI Only"),
     ] = None
     max_tokens: Annotated[int | None, Field("max thinking tokens, Google & Anthropic...")] = None
     exclude: Annotated[bool | None, Field("if True, exclude thinking content in response")] = False
