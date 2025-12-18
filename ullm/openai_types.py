@@ -264,7 +264,7 @@ class OpenRouterReasoning(BaseModel):
     exclude: Annotated[
         bool | None, Field(description="Whether to exclude reasoning from the response")
     ] = False
-    enabled: Annotated[bool | None, Field(description="Enable reasoning or not")] = False
+    enabled: Annotated[bool | None, Field(description="Enable reasoning or not")] = None
 
     @classmethod
     def from_standard(cls, thinking: Thinking):
