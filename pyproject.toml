@@ -15,6 +15,7 @@ dependencies = [
     "deepmerge",
     "jsonschema",
     "tabulate",
+    "openai>=2.24.0",
     "peewee",
     "pydantic_settings",
     "redis",
