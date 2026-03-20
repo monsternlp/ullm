@@ -149,10 +149,12 @@ class OpenAIAssistantMessage(BaseModel):
         if message.tool_calls:
             tool_calls = [OpenAIToolCall.from_standard(tc) for tc in message.tool_calls]
 
-        return cls(role="assistant", content=message.text, tool_calls=tool_calls)
+        # When tool calling is used, OpenAI expects `content` to be null.
+        content = None if tool_calls else message.text
+        return cls(role="assistant", content=content, tool_calls=tool_calls)
 
     def to_standard(self) -> AssistantMessage:
-        parts = [TextPart(text=self.content)] if self.content != "" else []
+        parts = [TextPart(text=self.content)] if self.content else []
         tool_calls: Optional[List[ToolCall]] = None
         if self.tool_calls:
             tool_calls = [tc.to_standard() for tc in self.tool_calls]
@@ -268,14 +270,41 @@ class OpenRouterReasoning(BaseModel):
 
     @classmethod
     def from_standard(cls, thinking: Thinking):
-        if thinking.type == "enabled" and (thinking.effort or thinking.max_tokens > 0):
-            return cls(
-                effort=thinking.effort,
-                max_tokens=thinking.max_tokens,
-                exclude=thinking.exclude,
-            )
+        if thinking.type == "disabled" or thinking.effort == "none":
+            return cls(effort="none", exclude=True, enabled=False)
 
-        return cls(effort="none", exclude=True, enabled=False)
+        enabled_kwargs: Dict[str, Any] = {
+            "enabled": True,
+            "exclude": bool(thinking.exclude),
+        }
+        if thinking.effort is not None:
+            enabled_kwargs["effort"] = thinking.effort
+        if thinking.max_tokens is not None:
+            enabled_kwargs["max_tokens"] = thinking.max_tokens
+
+        return cls(**enabled_kwargs)
+
+
+class OpenAIReasoning(BaseModel):
+    """
+    https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create#(resource)%20chat.completions%20%3E%20(method)%20create%20%3E%20(params)%200.non_streaming%20%3E%20(param)%20reasoning_effort%20%3E%20(schema)
+    Configuration for model reasoning/thinking of OpenAI
+    """
+
+    effort: Annotated[
+        Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
+        Field(description="OpenAI-style reasoning effort setting"),
+    ] = None
+
+    @classmethod
+    def from_standard(cls, thinking: Thinking):
+        # OpenAI uses a top-level `reasoning_effort` parameter.
+        # When `thinking.effort` is omitted, OpenAI will fall back to its own default.
+        # We still return a concrete value here for callers that need it.
+        if thinking.type == "disabled" or thinking.effort == "none":
+            return cls(effort="none")
+
+        return cls(effort=thinking.effort or "medium")
 
 
 class OpenAIRequestBody(BaseModel):
@@ -285,7 +314,6 @@ class OpenAIRequestBody(BaseModel):
     # 0. 受实际使用场景影响，目前优先适配 openrouter api 而不是 openai
     # 1. gpt-4-vision 不能设置 logprobs/logit_bias/tools/tool_choice/response_format 几个参数
     # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
-    # 3. `reasoning` 只被 openrouter 支持，openai api 中对应参数为 `reasoning_effort`
     # TODO: 严格区分 openai 和 openrouter 的差异参数
     messages: Annotated[List[OpenAIChatMessage], Field(min_length=1)]
     model: str
@@ -297,6 +325,11 @@ class OpenAIRequestBody(BaseModel):
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
     modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
+    reasoning_effort: Optional[Literal["xhigh", "high", "medium", "low", "minimal", "none"]] = (
+        Field(default=None)
+    )
+    # NOTE: 由于具体应用中已有很多使用 OpenaiCompatibleModel 调用 openrouter 接口的情况
+    # 此处保留`reasoning`字段以兼容 OpenRouter 格式
     reasoning: Optional[OpenRouterReasoning] = Field(default=None)
     response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)

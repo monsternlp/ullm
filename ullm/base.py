@@ -549,6 +549,10 @@ class HttpServiceModel(RemoteLanguageModel):
         max_tokens: Optional[int] = None,
         n: Optional[int] = None,
         presence_penalty: Optional[float] = None,
+        modalities: Optional[List[Literal["text", "audio", "image"]]] = None,
+        reasoning_effort: Optional[
+            Literal["xhigh", "high", "medium", "low", "minimal", "none"]
+        ] = None,
         response_format: Optional[Dict[Literal["type"], Literal["text", "json_object"]]] = None,
         seed: Optional[int] = None,
         stop: Optional[Union[str, List[str]]] = None,
@@ -571,6 +575,8 @@ class HttpServiceModel(RemoteLanguageModel):
             max_tokens=max_tokens,
             n=n,
             presence_penalty=presence_penalty,
+            modalities=modalities,
+            reasoning_effort=reasoning_effort,
             response_format=response_format,
             seed=seed,
             stop=stop,

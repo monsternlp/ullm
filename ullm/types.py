@@ -244,10 +244,54 @@ class Thinking(BaseModel):
     ] = "auto"
     effort: Annotated[
         Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
-        Field("thinking effort, OpenAI Only"),
+        Field("reasoning effort strength (preferred control)"),
     ] = None
-    max_tokens: Annotated[int | None, Field("max thinking tokens, Google & Anthropic...")] = None
-    exclude: Annotated[bool | None, Field("if True, exclude thinking content in response")] = False
+    max_tokens: Annotated[
+        int | None,
+        Field(
+            description="DEPRECATED: provider-specific reasoning budget. Prefer `effort`.",
+            json_schema_extra={"deprecated": True},
+        ),
+    ] = None
+    exclude: Annotated[
+        bool | None,
+        Field(
+            description="DEPRECATED: exclude thinking from response. Prefer defaults.",
+            json_schema_extra={"deprecated": True},
+        ),
+    ] = False
+
+    @model_validator(mode="after")
+    def validate_effort_and_type(self):
+        # Keep `exclude` consistent: `None` behaves like `False`.
+        if self.exclude is None:
+            self.exclude = False
+
+        # Normalize `effort="none"` into explicit disabled mode.
+        if self.effort == "none":
+            self.type = "disabled"
+            self.effort = "none"
+            self.exclude = True
+
+        # Provider-agnostic disabled semantics.
+        if self.type == "disabled":
+            self.effort = "none"
+            self.exclude = True
+
+        # In `auto` mode, if the user provided explicit tuning knobs, we treat it
+        # as `enabled` so downstream adapters don't have to guess.
+        if self.type == "auto" and (self.effort is not None or self.max_tokens is not None):
+            self.type = "enabled"
+
+        # Soft validation for deprecated budget usage.
+        if self.max_tokens is not None and self.max_tokens < 0:
+            raise ValueError("`max_tokens` must be >= 0 when provided.")
+        if self.max_tokens == 0 and self.type != "disabled":
+            self.type = "disabled"
+            self.effort = "none"
+            self.exclude = True
+
+        return self
 
 
 class ResponseSchema(BaseModel):
