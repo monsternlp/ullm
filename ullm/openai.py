@@ -11,6 +11,7 @@ from .openai_types import (
     AzureOpenAIRequestBody,
     OpenAIAssistantMessage,
     OpenAIChatMessage,
+    OpenAIReasoning,
     OpenAIRequestBody,
     OpenAIResponseBody,
     OpenAISystemMessage,
@@ -114,6 +115,9 @@ class OpenAICompatibleModel(HttpServiceModel):
         }
 
         if config.thinking:
+            params["reasoning_effort"] = OpenAIReasoning.from_standard(config.thinking).effort
+            # NOTE: 由于具体应用中已有很多使用 OpenaiCompatibleModel 调用 openrouter 接口的情况
+            # 此处保留`reasoning`字段以兼容 OpenRouter 格式
             params["reasoning"] = OpenRouterReasoning.from_standard(config.thinking)
         return params
 
