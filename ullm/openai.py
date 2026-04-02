@@ -19,8 +19,8 @@ from .openai_types import (
     OpenAIToolChoice,
     OpenAIToolMessage,
     OpenAIUserMessage,
-    OpenRouterReasoning,
 )
+from .openrouter_types import OpenRouterReasoning
 from .types import (
     AssistantMessage,
     ChatMessage,
@@ -118,7 +118,7 @@ class OpenAICompatibleModel(HttpServiceModel):
             params["reasoning_effort"] = OpenAIReasoning.from_standard(config.thinking).effort
             # NOTE: 由于具体应用中已有很多使用 OpenaiCompatibleModel 调用 openrouter 接口的情况
             # 此处保留`reasoning`字段以兼容 OpenRouter 格式
-            # FIXME: 调用 google 的 openai compatible 时，reasoning 字段会报错。参数强校验
+            # FIXME: 调用 google 的 openai compatible api 时，reasoning 字段会报错，参数强校验
             params["reasoning"] = OpenRouterReasoning.from_standard(config.thinking)
         return params
 

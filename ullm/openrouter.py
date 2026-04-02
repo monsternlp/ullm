@@ -15,6 +15,7 @@ from .openai_types import (
     OpenAIToolCall,
     OpenRouterReasoning,
 )
+from .openrouter_types import OpenRouterReasoning
 from .types import (
     AssistantMessage,
     GenerateConfig,
@@ -65,6 +66,7 @@ class OpenRouterRequestBody(OpenAIRequestBody):
     # OpenAI 没有的参数
     reasoning: Optional[OpenRouterReasoning] = Field(default=None)
     prompt: Optional[str] = None
+    reasoning: Optional[OpenRouterReasoning] = None
     top_k: Optional[Annotated[int, Field(ge=1)]] = None
     repetition_penalty: Optional[Annotated[float, Field(gt=0.0, le=2.0)]] = None
     transforms: Optional[List[Literal["middle-out"]]] = None

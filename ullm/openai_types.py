@@ -246,75 +246,28 @@ class OpenAIToolChoice(BaseModel):
         return ToolChoice(mode="any", functions=[self.function["name"]])
 
 
-class OpenRouterReasoning(BaseModel):
-    """
-    https://openrouter.ai/docs/use-cases/reasoning-tokens#reasoning-effort-level
-    NOTE: Only supported by openrouter.
-    Configuration for model reasoning/thinking tokens
-    """
-
-    effort: Annotated[
-        Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
-        Field(description="OpenAI-style reasoning effort setting"),
-    ] = None
-    max_tokens: Annotated[
-        int | None,
-        Field(
-            description="Non-OpenAI-style reasoning effort setting. Cannot be used simultaneously with effort."  # noqa: E501
-        ),
-    ] = None
-    exclude: Annotated[
-        bool | None, Field(description="Whether to exclude reasoning from the response")
-    ] = False
-    enabled: Annotated[bool | None, Field(description="Enable reasoning or not")] = None
-
-    @classmethod
-    def from_standard(cls, thinking: Thinking):
-        if thinking.type == "disabled" or thinking.effort == "none":
-            return cls(effort="none", exclude=True, enabled=False)
-
-        enabled_kwargs: Dict[str, Any] = {
-            "enabled": True,
-            "exclude": bool(thinking.exclude),
-        }
-        if thinking.effort is not None:
-            enabled_kwargs["effort"] = thinking.effort
-        if thinking.max_tokens is not None:
-            enabled_kwargs["max_tokens"] = thinking.max_tokens
-
-        return cls(**enabled_kwargs)
-
-
 class OpenAIReasoning(BaseModel):
-    """
-    https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create#(resource)%20chat.completions%20%3E%20(method)%20create%20%3E%20(params)%200.non_streaming%20%3E%20(param)%20reasoning_effort%20%3E%20(schema)
-    Configuration for model reasoning/thinking of OpenAI
-    """
+    """Current OpenAI-compatible reasoning effort subset."""
 
     effort: Annotated[
         Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
-        Field(description="OpenAI-style reasoning effort setting"),
+        Field(description="OpenAI reasoning_effort setting"),
     ] = None
 
     @classmethod
     def from_standard(cls, thinking: Thinking):
-        # OpenAI uses a top-level `reasoning_effort` parameter.
-        # When `thinking.effort` is omitted, OpenAI will fall back to its own default.
-        # We still return a concrete value here for callers that need it.
-        if thinking.type == "disabled" or thinking.effort == "none":
+        if thinking.type == "disabled":
             return cls(effort="none")
 
-        return cls(effort=thinking.effort or "medium")
+        return cls(effort=thinking.effort)
 
 
 class OpenAIRequestBody(BaseModel):
     # https://platform.openai.com/docs/api-reference/chat/create
-    # https://openrouter.ai/docs/api-reference/chat-completion
     # NOTE:
-    # 0. 受实际使用场景影响，目前优先适配 openrouter api 而不是 openai
+    # 0. 这里只定义当前项目已支持的 OpenAI chat-completions 子集
     # 1. gpt-4-vision 不能设置 logprobs/logit_bias/tools/tool_choice/response_format 几个参数
     # 2. 只有 gpt-4-turbo 系列模型和比 gpt-3.5-turbo-1106 更新的模型可以使用 response_format 参数
-    # TODO: 严格区分 openai 和 openrouter 的差异参数
     messages: Annotated[List[OpenAIChatMessage], Field(min_length=1)]
     model: str
     frequency_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
@@ -325,12 +278,6 @@ class OpenAIRequestBody(BaseModel):
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
     modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
-    reasoning_effort: Optional[Literal["xhigh", "high", "medium", "low", "minimal", "none"]] = (
-        Field(default=None)
-    )
-    # NOTE: 由于具体应用中已有很多使用 OpenaiCompatibleModel 调用 openrouter 接口的情况
-    # 此处保留`reasoning`字段以兼容 OpenRouter 格式
-    reasoning: Optional[OpenRouterReasoning] = Field(default=None)
     response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
