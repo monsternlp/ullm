@@ -10,6 +10,7 @@ import magic
 from openai.lib._parsing import type_to_response_format_param
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     HttpUrl,
     Json,
@@ -295,9 +296,11 @@ class Thinking(BaseModel):
 
 
 class ResponseSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     name: str
     description: Optional[str] = None
-    schema: dict = Field(description="符合 OpenAI 要求的 JsonSchema 定义")
+    json_schema: dict = Field(alias="schema", description="符合 OpenAI 要求的 JsonSchema 定义")
     strict: Optional[bool] = True
 
     @classmethod
@@ -307,11 +310,13 @@ class ResponseSchema(BaseModel):
 
     @classmethod
     def from_json_schema(cls, json_schema: dict):
-        return cls.model_validate({
-            "schema": json_schema,
-            "name": json_schema["title"],
-            "strict": True,
-        })
+        return cls.model_validate(
+            {
+                "schema": json_schema,
+                "name": json_schema["title"],
+                "strict": True,
+            }
+        )
 
 
 class GenerateConfig(BaseModel):

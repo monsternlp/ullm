@@ -533,7 +533,7 @@ def test_request_body_to_standard_preserves_json_schema_and_reasoning_effort():
     assert config.response_format == "json_schema"
     assert isinstance(config.response_schema, ResponseSchema)
     assert config.response_schema.name == "answer_schema"
-    assert config.response_schema.schema["properties"]["answer"]["type"] == "string"
+    assert config.response_schema.json_schema["properties"]["answer"]["type"] == "string"
 
 
 def test_openrouter_make_api_body_uses_reasoning_only():
