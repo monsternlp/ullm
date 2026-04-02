@@ -2,6 +2,7 @@ import base64
 import os
 
 import pytest
+from pydantic import BaseModel
 
 from ullm import AssistantMessage, LanguageModel, ToolMessage, UserMessage
 from ullm.base import HttpServiceModel
@@ -14,6 +15,7 @@ from ullm.openai import (
 )
 from ullm.openai_types import OpenAIFunctionObject, OpenAIRequestBody
 from ullm.types import GenerateConfig, ResponseSchema
+from ullm.utils import to_gemini_json_schema
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DATA = None
@@ -555,3 +557,56 @@ def test_openrouter_make_api_body_uses_reasoning_only():
     assert api_body["model"] == "openai/gpt-4o"
     assert api_body["reasoning"]["effort"] == "low"
     assert "reasoning_effort" not in api_body
+
+
+class _GeminiCountryInfoForTest(BaseModel):
+    continent: str
+    gdp: int
+
+
+class _GeminiCountriesForTest(BaseModel):
+    countries: list[_GeminiCountryInfoForTest]
+
+
+def test_to_gemini_json_schema_inlines_nested_pydantic_model_refs():
+    schema = to_gemini_json_schema(_GeminiCountriesForTest)
+
+    assert schema["title"] == "_GeminiCountriesForTest"
+    assert "$defs" not in schema
+    assert schema["properties"]["countries"]["type"] == "array"
+    assert "$ref" not in schema["properties"]["countries"]["items"]
+    assert schema["properties"]["countries"]["items"]["title"] == "_GeminiCountryInfoForTest"
+    assert schema["properties"]["countries"]["items"]["properties"]["continent"]["type"] == "string"
+    assert schema["properties"]["countries"]["items"]["properties"]["gdp"]["type"] == "integer"
+    assert schema["properties"]["countries"]["items"]["propertyOrdering"] == ["continent", "gdp"]
+    assert ResponseSchema.from_json_schema(schema).name == "_GeminiCountriesForTest"
+
+
+def test_to_gemini_json_schema_inlines_defs_for_plain_json_schema():
+    schema = to_gemini_json_schema(
+        {
+            "title": "Placeholder",
+            "type": "array",
+            "items": {"$ref": "#/$defs/CountryInfo"},
+            "$defs": {
+                "CountryInfo": {
+                    "title": "CountryInfo",
+                    "type": "object",
+                    "properties": {
+                        "continent": {"title": "Continent", "type": "string"},
+                        "gdp": {"title": "Gdp", "type": "integer"},
+                    },
+                    "required": ["continent", "gdp"],
+                }
+            },
+        }
+    )
+
+    assert schema["title"] == "Placeholder"
+    assert "$defs" not in schema
+    assert "$ref" not in schema["items"]
+    assert schema["items"]["title"] == "CountryInfo"
+    assert schema["items"]["properties"]["continent"]["type"] == "string"
+    assert schema["items"]["properties"]["gdp"]["type"] == "integer"
+    assert schema["items"]["propertyOrdering"] == ["continent", "gdp"]
+    assert ResponseSchema.from_json_schema(schema).name == "Placeholder"

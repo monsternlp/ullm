@@ -305,11 +305,19 @@ class ResponseSchema(BaseModel):
 
     @classmethod
     def from_pydantic_schema(cls, schema: BaseModel):
+        """
+        本方法会将 pydantic 模型转换为符合 OpenAI 要求的 JsonSchema 格式
+        对于使用 openai compatible api 的其他厂商可能会造成格式不兼容
+        此时应当在外部按照厂商规则转换好 jsonschema 后，使用 from_json_schema 方法构建
+        """
         openai_response_format = type_to_response_format_param(schema)
         return cls.model_validate(openai_response_format["json_schema"])
 
     @classmethod
     def from_json_schema(cls, json_schema: dict):
+        """
+        严格使用传入的 json schema 定义，不会进行任何转换
+        """
         return cls.model_validate(
             {
                 "schema": json_schema,

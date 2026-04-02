@@ -264,9 +264,9 @@ class OpenAIRequestBody(BaseModel):
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
     modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
-    reasoning_effort: Optional[
-        Literal["xhigh", "high", "medium", "low", "minimal", "none"]
-    ] = Field(default=None)
+    reasoning_effort: Optional[Literal["xhigh", "high", "medium", "low", "minimal", "none"]] = (
+        Field(default=None)
+    )
     response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
@@ -308,9 +308,7 @@ class OpenAIRequestBody(BaseModel):
             if self.reasoning_effort == "none":
                 config_data["thinking"] = Thinking(type="disabled", effort="none")
             else:
-                config_data["thinking"] = Thinking(
-                    type="enabled", effort=self.reasoning_effort
-                )
+                config_data["thinking"] = Thinking(type="enabled", effort=self.reasoning_effort)
 
         if self.tools:
             config_data["tools"] = [tool.to_standard() for tool in self.tools]
