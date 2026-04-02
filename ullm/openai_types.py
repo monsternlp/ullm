@@ -149,12 +149,14 @@ class OpenAIAssistantMessage(BaseModel):
         if message.tool_calls:
             tool_calls = [OpenAIToolCall.from_standard(tc) for tc in message.tool_calls]
 
-        # When tool calling is used, OpenAI expects `content` to be null.
-        content = None if tool_calls else message.text
+        content = message.text
+        if content == "" and tool_calls:
+            content = None
+
         return cls(role="assistant", content=content, tool_calls=tool_calls)
 
     def to_standard(self) -> AssistantMessage:
-        parts = [TextPart(text=self.content)] if self.content else []
+        parts = [TextPart(text=self.content)] if self.content not in (None, "") else []
         tool_calls: Optional[List[ToolCall]] = None
         if self.tool_calls:
             tool_calls = [tc.to_standard() for tc in self.tool_calls]
@@ -246,22 +248,6 @@ class OpenAIToolChoice(BaseModel):
         return ToolChoice(mode="any", functions=[self.function["name"]])
 
 
-class OpenAIReasoning(BaseModel):
-    """Current OpenAI-compatible reasoning effort subset."""
-
-    effort: Annotated[
-        Literal["xhigh", "high", "medium", "low", "minimal", "none"] | None,
-        Field(description="OpenAI reasoning_effort setting"),
-    ] = None
-
-    @classmethod
-    def from_standard(cls, thinking: Thinking):
-        if thinking.type == "disabled":
-            return cls(effort="none")
-
-        return cls(effort=thinking.effort)
-
-
 class OpenAIRequestBody(BaseModel):
     # https://platform.openai.com/docs/api-reference/chat/create
     # NOTE:
@@ -278,6 +264,9 @@ class OpenAIRequestBody(BaseModel):
     n: Optional[Annotated[int, Field(ge=1, le=128)]] = Field(default=1)
     modalities: Optional[List[Literal["text", "audio", "image"]]] = None
     presence_penalty: Optional[Annotated[float, Field(ge=-2.0, le=2.0)]] = Field(default=None)
+    reasoning_effort: Optional[
+        Literal["xhigh", "high", "medium", "low", "minimal", "none"]
+    ] = Field(default=None)
     response_format: Optional[dict] = Field(default=None)
     seed: Optional[int] = Field(default=None)
     stop: Optional[Union[str, List[str]]] = Field(default=None)
@@ -306,11 +295,22 @@ class OpenAIRequestBody(BaseModel):
             "top_p": self.top_p,
             "stop_sequences": [self.stop] if isinstance(self.stop, str) else self.stop,
             "frequency_penalty": self.frequency_penalty,
+            "modalities": self.modalities,
             "presence_penalty": self.presence_penalty,
         }
 
         if self.response_format and self.response_format.get("type"):
             config_data["response_format"] = self.response_format["type"]
+            if self.response_format["type"] == "json_schema":
+                config_data["response_schema"] = self.response_format["json_schema"]
+
+        if self.reasoning_effort is not None:
+            if self.reasoning_effort == "none":
+                config_data["thinking"] = Thinking(type="disabled", effort="none")
+            else:
+                config_data["thinking"] = Thinking(
+                    type="enabled", effort=self.reasoning_effort
+                )
 
         if self.tools:
             config_data["tools"] = [tool.to_standard() for tool in self.tools]

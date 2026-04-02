@@ -13,7 +13,6 @@ from .openai_types import (
     OpenAIRequestBody,
     OpenAIResponseBody,
     OpenAIToolCall,
-    OpenRouterReasoning,
 )
 from .openrouter_types import OpenRouterReasoning
 from .types import (
@@ -64,7 +63,6 @@ class OpenRouterProviderSetting(BaseModel):
 class OpenRouterRequestBody(OpenAIRequestBody):
     # reference: https://openrouter.ai/docs#requests
     # OpenAI 没有的参数
-    reasoning: Optional[OpenRouterReasoning] = Field(default=None)
     prompt: Optional[str] = None
     reasoning: Optional[OpenRouterReasoning] = None
     top_k: Optional[Annotated[int, Field(ge=1)]] = None
@@ -572,7 +570,7 @@ class OpenRouterModel(OpenAICompatibleModel):
                     mode="json", by_alias=True
                 )
 
-        params: Dict[str, Any] = {
+        params = {
             "model": f"{model_prefix}/{self.model}",
             "frequency_penalty": config.frequency_penalty,
             "max_tokens": config.max_output_tokens or self.config.max_output_tokens,
@@ -584,7 +582,6 @@ class OpenRouterModel(OpenAICompatibleModel):
             "top_k": config.top_k or self.config.top_k,
             "repetition_penalty": config.repetition_penalty,
         }
-
         if config.thinking:
             params["reasoning"] = OpenRouterReasoning.from_standard(config.thinking)
 

@@ -12,7 +12,8 @@ from ullm.openai import (
     OpenAIToolMessage,
     OpenAIUserMessage,
 )
-from ullm.openai_types import OpenAIFunctionObject
+from ullm.openai_types import OpenAIFunctionObject, OpenAIRequestBody
+from ullm.types import GenerateConfig, ResponseSchema
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DATA = None
@@ -476,3 +477,81 @@ def test_make_api_body(model_config, messages, config, system, api_body):
     model = LanguageModel.from_config(model_config)
     assert isinstance(model, HttpServiceModel)
     assert model._make_api_body(messages, config, system) == api_body
+
+
+def test_make_api_body_uses_reasoning_effort_only():
+    model = LanguageModel.from_config(
+        {
+            "type": "remote",
+            "provider": "openai-compatible",
+            "model": "mymodel",
+            "api_url": "http://localhost:8080/api/v1/chat/completions",
+            "is_visual_model": False,
+            "is_online_model": False,
+            "is_tool_model": False,
+        }
+    )
+    assert isinstance(model, HttpServiceModel)
+
+    api_body = model._make_api_body(
+        [{"role": "user", "content": "hello"}],
+        GenerateConfig(thinking={"type": "enabled", "effort": "low"}),
+    )
+
+    assert api_body["reasoning_effort"] == "low"
+    assert "reasoning" not in api_body
+
+
+def test_request_body_to_standard_preserves_json_schema_and_reasoning_effort():
+    request_body = OpenAIRequestBody.model_validate(
+        {
+            "messages": [{"role": "user", "content": "hello"}],
+            "model": "mock-model",
+            "reasoning_effort": "medium",
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "answer_schema",
+                    "description": "Structured answer",
+                    "schema": {
+                        "title": "answer_schema",
+                        "type": "object",
+                        "properties": {"answer": {"type": "string"}},
+                        "required": ["answer"],
+                    },
+                    "strict": True,
+                },
+            },
+        }
+    )
+
+    standard_request = request_body.to_standard()
+    config = standard_request["config"]
+
+    assert config.thinking.type == "enabled"
+    assert config.thinking.effort == "medium"
+    assert config.response_format == "json_schema"
+    assert isinstance(config.response_schema, ResponseSchema)
+    assert config.response_schema.name == "answer_schema"
+    assert config.response_schema.schema["properties"]["answer"]["type"] == "string"
+
+
+def test_openrouter_make_api_body_uses_reasoning_only():
+    model = LanguageModel.from_config(
+        {
+            "type": "remote",
+            "provider": "openrouter",
+            "model": "gpt-4o",
+            "api_key": "sk-test",
+        }
+    )
+    assert isinstance(model, HttpServiceModel)
+
+    api_body = model._make_api_body(
+        [{"role": "user", "content": "hello"}],
+        GenerateConfig(thinking={"type": "enabled", "effort": "low"}),
+    )
+
+    assert api_body["model"] == "openai/gpt-4o"
+    assert api_body["reasoning"]["effort"] == "low"
+    assert "reasoning_effort" not in api_body
