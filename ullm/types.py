@@ -305,6 +305,14 @@ class ResponseSchema(BaseModel):
         openai_response_format = type_to_response_format_param(schema)
         return cls.model_validate(openai_response_format["json_schema"])
 
+    @classmethod
+    def from_json_schema(cls, json_schema: dict):
+        return cls.model_validate({
+            "schema": json_schema,
+            "name": json_schema["title"],
+            "strict": True,
+        })
+
 
 class GenerateConfig(BaseModel):
     temperature: Optional[NonNegativeFloat] = None
